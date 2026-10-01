@@ -37,6 +37,8 @@ export class AsmrSynth {
   private loops: { scrape?: Loop; suction?: Loop; ambient?: Loop } = {};
   private buzz: { gain: GainNode; o1: OscillatorNode; o2: OscillatorNode } | null = null;
   muted = false;
+  /** Portal ads: kept separate from `muted` so a player-muted game stays muted after an ad. */
+  private adMuted = false;
 
   /** must be called from a user gesture */
   unlock() {
@@ -53,7 +55,7 @@ export class AsmrSynth {
     this.ctx = ctx;
 
     const master = ctx.createGain();
-    master.gain.value = this.muted ? 0 : 0.85;
+    master.gain.value = this.muted || this.adMuted ? 0 : 0.85;
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -14;
     comp.ratio.value = 6;
@@ -87,11 +89,21 @@ export class AsmrSynth {
     this.noise = buf;
   }
 
+  private applyGain() {
+    if (this.ctx && this.master) {
+      this.master.gain.setTargetAtTime(this.muted || this.adMuted ? 0 : 0.85, this.ctx.currentTime, 0.05);
+    }
+  }
+
   setMuted(m: boolean) {
     this.muted = m;
-    if (this.ctx && this.master) {
-      this.master.gain.setTargetAtTime(m ? 0 : 0.85, this.ctx.currentTime, 0.05);
-    }
+    this.applyGain();
+  }
+
+  /** Portal requirement: silence all audio while an ad is playing. */
+  setAdMuted(m: boolean) {
+    this.adMuted = m;
+    this.applyGain();
   }
 
   setPaused(p: boolean) {
@@ -216,7 +228,7 @@ export class AsmrSynth {
 
   // ── one-shots ─────────────────────────────────────────────
   private burst(o: BurstOpts) {
-    if (!this.ctx || !this.noise || !this.master || this.muted) return;
+    if (!this.ctx || !this.noise || !this.master || this.muted || this.adMuted) return;
     const ctx = this.ctx;
     const dur = o.dur ?? 0.08;
     const t = ctx.currentTime + (o.delay ?? 0);
@@ -240,7 +252,7 @@ export class AsmrSynth {
   }
 
   private tone(o: ToneOpts) {
-    if (!this.ctx || !this.master || this.muted) return;
+    if (!this.ctx || !this.master || this.muted || this.adMuted) return;
     const ctx = this.ctx;
     const t = ctx.currentTime + (o.delay ?? 0);
     const osc = ctx.createOscillator();

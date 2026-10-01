@@ -2,6 +2,8 @@
 // On failure or when blocked, a timeout fallback keeps the game from stalling.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { synth } from './AsmrSynth';
+
 declare global {
   interface Window {
     PokiSDK?: any;
@@ -126,34 +128,59 @@ export const Poki = {
   async commercialBreak(): Promise<void> {
     if (provider === 'poki' && ready) {
       try {
-        await withTimeout(window.PokiSDK.commercialBreak(), 10000, undefined);
+        await withTimeout(
+          window.PokiSDK.commercialBreak(() => synth.setAdMuted(true)),
+          10000,
+          undefined,
+        );
       } catch {
         /* ignore */
+      } finally {
+        synth.setAdMuted(false);
       }
       return;
     }
     if (provider === 'crazy' && ready) {
       try {
         await withTimeout(
-          window.CrazyGames?.SDK?.ad?.requestAd('midgame', { adStarted: () => {}, adFinished: () => {}, adError: () => {} }),
+          window.CrazyGames?.SDK?.ad?.requestAd('midgame', {
+            adStarted: () => synth.setAdMuted(true),
+            adFinished: () => synth.setAdMuted(false),
+            adError: () => synth.setAdMuted(false),
+          }),
           10000,
           undefined,
         );
       } catch {
         /* ignore */
+      } finally {
+        synth.setAdMuted(false);
       }
       return;
     }
     if (!adUI) return;
-    await new Promise<void>((resolve) => adUI!('commercial', () => resolve()));
+    synth.setAdMuted(true);
+    try {
+      await new Promise<void>((resolve) => adUI!('commercial', () => resolve()));
+    } finally {
+      synth.setAdMuted(false);
+    }
   },
 
   async rewardedBreak(): Promise<boolean> {
     if (provider === 'poki' && ready) {
       try {
-        return Boolean(await withTimeout(window.PokiSDK.rewardedBreak(), 15000, false));
+        return Boolean(
+          await withTimeout(
+            window.PokiSDK.rewardedBreak({ onStart: () => synth.setAdMuted(true) }),
+            15000,
+            false,
+          ),
+        );
       } catch {
         return false;
+      } finally {
+        synth.setAdMuted(false);
       }
     }
     if (provider === 'crazy' && ready) {
@@ -161,11 +188,13 @@ export const Poki = {
         let ok = false;
         await withTimeout(
           window.CrazyGames?.SDK?.ad?.requestAd('rewarded', {
-            adStarted: () => {},
+            adStarted: () => synth.setAdMuted(true),
             adFinished: () => {
+              synth.setAdMuted(false);
               ok = true;
             },
             adError: () => {
+              synth.setAdMuted(false);
               ok = false;
             },
           }),
@@ -175,10 +204,17 @@ export const Poki = {
         return ok;
       } catch {
         return false;
+      } finally {
+        synth.setAdMuted(false);
       }
     }
     if (!adUI) return true;
-    return new Promise<boolean>((resolve) => adUI!('rewarded', (ok) => resolve(ok)));
+    synth.setAdMuted(true);
+    try {
+      return await new Promise<boolean>((resolve) => adUI!('rewarded', (ok) => resolve(ok)));
+    } finally {
+      synth.setAdMuted(false);
+    }
   },
 };
 
