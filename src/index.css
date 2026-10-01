@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* 포털(외부요청 차단)에서도 폰트가 깨지지 않도록 로컬 서브셋 번들 */
+/* locally bundled font subset so type doesn't break on portals (external requests blocked) */
 @font-face {
   font-family: "Jua";
   font-style: normal;

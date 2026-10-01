@@ -12,9 +12,9 @@ export function EarsTab() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">👂 귀 주인 도감</h1>
+        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">👂 Ear Owner Codex</h1>
         <p className="text-sm text-white/60">
-          귀마다 지형·중력·털·귓밥이 달라요. 기묘한 귀일수록 수익이 커집니다. (unlockedEars {save.unlockedEars.length}/4)
+          Every ear has its own terrain, gravity, fur and wax. The weirder the ear, the fatter the payout. (unlockedEars {save.unlockedEars.length}/4)
         </p>
         {msg && <p className="mt-1 text-sm font-bold text-rose-300">{msg}</p>}
       </div>
@@ -42,16 +42,16 @@ export function EarsTab() {
               </ul>
               <div className="grid grid-cols-4 gap-1.5 text-center text-[11px] text-white/60">
                 <div className="rounded-lg bg-black/25 p-1.5">
-                  통로 <b className="block text-white">{ear.base < 100 ? '좁음' : ear.base > 130 ? '넓음' : '보통'}</b>
+                  Canal <b className="block text-white">{ear.base < 100 ? 'Narrow' : ear.base > 130 ? 'Wide' : 'Normal'}</b>
                 </div>
                 <div className="rounded-lg bg-black/25 p-1.5">
-                  중력 <b className="block text-white">×{ear.gravity}</b>
+                  Gravity <b className="block text-white">×{ear.gravity}</b>
                 </div>
                 <div className="rounded-lg bg-black/25 p-1.5">
-                  털 <b className="block text-white">{ear.hairMult < 1 ? '적음' : ear.hairMult > 1.5 ? '북슬' : '보통'}</b>
+                  Fur <b className="block text-white">{ear.hairMult < 1 ? 'Sparse' : ear.hairMult > 1.5 ? 'Fluffy' : 'Normal'}</b>
                 </div>
                 <div className="rounded-lg bg-black/25 p-1.5">
-                  수익 <b className="block text-amber-300">×{ear.valueMult}</b>
+                  Payout <b className="block text-amber-300">×{ear.valueMult}</b>
                 </div>
               </div>
               {unlocked ? (
@@ -63,7 +63,7 @@ export function EarsTab() {
                     actions.selectEar(id);
                   }}
                 >
-                  {selected ? '✔ 선택됨' : '이 귀로 출격'}
+                  {selected ? '✔ Selected' : 'Mine with this ear'}
                 </Btn>
               ) : (
                 <Btn
@@ -72,14 +72,14 @@ export function EarsTab() {
                     synth.unlock();
                     if (actions.unlockEar(id)) {
                       synth.buy();
-                      setMsg(`${ear.name} 해금 완료!`);
+                      setMsg(`${ear.name} unlocked!`);
                     } else {
                       synth.click();
-                      setMsg('귓밥이 부족해요…');
+                      setMsg('Not enough wax…');
                     }
                   }}
                 >
-                  해금 <Wax n={ear.cost} className="!text-rose-950" />
+                  Unlock <Wax n={ear.cost} className="!text-rose-950" />
                 </Btn>
               )}
             </Card>

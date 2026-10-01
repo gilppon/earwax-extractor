@@ -6,9 +6,9 @@ import { cn } from '../utils/cn';
 import { Btn, Card } from './ui';
 
 const MODES: { id: GameMode; label: string; icon: string }[] = [
-  { id: 'ENDLESS', label: '무한 광산', icon: '♾️' },
-  { id: 'BOSS', label: '보스전', icon: '🪨' },
-  { id: 'STAGE', label: '탐사', icon: '🧪' },
+  { id: 'ENDLESS', label: 'Endless', icon: '♾️' },
+  { id: 'BOSS', label: 'Boss', icon: '🪨' },
+  { id: 'STAGE', label: 'Stages', icon: '🧪' },
 ];
 
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -22,13 +22,13 @@ export function RankTab() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">🏆 귓밥 채굴왕 랭킹</h1>
-        <p className="text-sm text-white/60">이 기기에 저장되는 로컬 리더보드입니다. 라이벌 광부들을 넘어서 보세요!</p>
+        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">🏆 Earwax King Rankings</h1>
+        <p className="text-sm text-white/60">A local leaderboard stored on this device. Beat the rival miners!</p>
       </div>
 
       <Card className="flex flex-wrap items-center gap-3">
         <label className="text-sm text-white/70" htmlFor="nick">
-          닉네임
+          Nickname
         </label>
         <input
           id="nick"
@@ -38,7 +38,7 @@ export function RankTab() {
           className="min-w-0 flex-1 rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-base outline-none focus:border-amber-300"
         />
         <Btn variant="primary" className="!py-2" onClick={() => actions.setNickname(name)}>
-          저장
+          Save
         </Btn>
       </Card>
 
@@ -71,10 +71,10 @@ export function RankTab() {
               <div className="min-w-0 flex-1">
                 <div className="truncate font-bold">
                   {e.name}
-                  {e.mine && <span className="ml-2 rounded-full bg-amber-300 px-2 py-0.5 text-[10px] text-amber-950">나</span>}
+                  {e.mine && <span className="ml-2 rounded-full bg-amber-300 px-2 py-0.5 text-[10px] text-amber-950">Me</span>}
                 </div>
                 <div className="text-xs text-white/40">
-                  {e.rival ? '라이벌 광부' : `${e.ear ? EARS[e.ear].emoji + ' ' + EARS[e.ear].name : ''} · ${new Date(e.date).toLocaleDateString('ko-KR')}`}
+                  {e.rival ? 'Rival miner' : `${e.ear ? EARS[e.ear].emoji + ' ' + EARS[e.ear].name : ''} · ${new Date(e.date).toLocaleDateString('en-US')}`}
                 </div>
               </div>
               <div className="text-lg font-bold text-amber-300">{e.score.toLocaleString()}</div>

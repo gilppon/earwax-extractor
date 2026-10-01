@@ -1,5 +1,5 @@
-// 포털 광고 통합 어댑터 (Poki / CrazyGames / 모의 자동 전환)
-// 실패·차단 시 타임아웃 폴백으로 게임이 멈추지 않음.
+// portal ad adapter (Poki / CrazyGames / auto-fallback to mock)
+// On failure or when blocked, a timeout fallback keeps the game from stalling.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 declare global {
@@ -89,7 +89,7 @@ export const Poki = {
       }
       ready = true;
     })();
-    // 전체 초기화도 8초 타임아웃 (광고 차단 환경에서 게임 멈춤 방지)
+    // full init also gets an 8s timeout (prevents a hang when ads are blocked)
     return withTimeout(initPromise, 8000, undefined);
   },
 
@@ -128,7 +128,7 @@ export const Poki = {
       try {
         await withTimeout(window.PokiSDK.commercialBreak(), 10000, undefined);
       } catch {
-        /* 무시 */
+        /* ignore */
       }
       return;
     }
@@ -140,7 +140,7 @@ export const Poki = {
           undefined,
         );
       } catch {
-        /* 무시 */
+        /* ignore */
       }
       return;
     }
@@ -187,7 +187,7 @@ export const pokiGameplayStart = () => Poki.gameplayStart();
 export const pokiGameplayStop = () => Poki.gameplayStop();
 export const pokiRewarded = async (): Promise<boolean> => Poki.rewardedBreak();
 
-/** 보상형 광고 (_play 화면에서 직접 사용) */
+/** Rewarded ad (used directly from the _play screen) */
 export const rewardedBreak = async (): Promise<boolean> => Poki.rewardedBreak();
-/** 전면 광고 */
+/** Interstitial ad */
 export const commercialBreak = async (): Promise<void> => Poki.commercialBreak();

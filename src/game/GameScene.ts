@@ -66,7 +66,7 @@ function mulberry(seed: number) {
 
 const KIND_MULT: Record<ChunkKind, number> = { NORMAL: 1, GOLD: 3, HARD: 2, FRAG: 6, BOSS: 0 };
 
-/** 저사양 모드: 앰비언트 파티클 정지 + 붉은 플래시 스킵 (GameHandle에서 설정) */
+/** Low-spec mode: stop ambient particles + skip red flashes (set from GameHandle) */
 let lowFxMode = false;
 export function setSceneLowFx(v: boolean) {
   lowFxMode = v;
@@ -145,7 +145,7 @@ export class GameScene extends Phaser.Scene {
 
   // ═════════════════════════════ setup ═════════════════════════════
   create() {
-    // 부활 재도전: 고막 내구 +30%
+    // revive retry: +30% eardrum durability
     if (this.run.reviveBuff) {
       this.st.hp = 130;
       this.st.minHp = 130;
@@ -212,7 +212,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(3);
 
     this.add
-      .text(EXIT_X + 8, this.canal.top(EXIT_X) + 8, '◀ 출구', {
+      .text(EXIT_X + 8, this.canal.top(EXIT_X) + 8, '◀ EXIT', {
         fontFamily: FONT,
         fontSize: '15px',
         color: '#ffffff',
@@ -235,7 +235,7 @@ export class GameScene extends Phaser.Scene {
       onGrab: () => this.synth.grab(),
       onSlip: () => {
         this.synth.slip();
-        this.floatText(this.swab.x, this.swab.y - 24, '미끌!', '#ffffff');
+        this.floatText(this.swab.x, this.swab.y - 24, 'Squelch!', '#ffffff');
       },
       onTickle: () => {
         this.synth.tickle();
@@ -427,7 +427,7 @@ export class GameScene extends Phaser.Scene {
     this.flinchT = 12;
     this.sway = 0.12 * this.ear.wobble;
     this.spawnT = 2.2;
-    this.time.delayedCall(500, () => this.banner('무한 귓속 광산', '#ff9ec2', 38));
+    this.time.delayedCall(500, () => this.banner('Endless Earwax Mine', '#ff9ec2', 38));
   }
 
   private initBoss() {
@@ -447,7 +447,7 @@ export class GameScene extends Phaser.Scene {
     this.flinchInterval = 8;
     this.flinchT = 7;
     this.sway = 0.08;
-    this.time.delayedCall(500, () => this.banner('석회화 귓밥 보스', '#ffd180', 38));
+    this.time.delayedCall(500, () => this.banner('Lime Wax Boulder', '#ffd180', 38));
   }
 
   // ═════════════════════════════ main loop ═════════════════════════════
@@ -538,7 +538,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onDepthUp() {
-    this.banner(`깊이 Lv.${this.st.depth} — 귓밥이 단단해진다!`, '#ff8a80', 30);
+    this.banner(`Depth Lv.${this.st.depth} — wax is getting tougher!`, '#ff8a80', 30);
     this.synth.win();
     this.cameras.main.flash(200, 255, 120, 120);
     const want = Math.min(9, Math.round((2 + this.st.depth) * this.ear.hairMult));
@@ -590,7 +590,7 @@ export class GameScene extends Phaser.Scene {
     if (this.st.cracks >= 3) {
       this.breakBoss();
     } else {
-      this.banner(`균열 ${this.st.cracks} / 3`, '#ffb74d', 36);
+      this.banner(`Crack ${this.st.cracks} / 3`, '#ffb74d', 36);
       this.flinchInterval = 6;
     }
   }
@@ -623,7 +623,7 @@ export class GameScene extends Phaser.Scene {
     this.swab.setTool('TWEEZER');
     this.synth.pop(0.5);
     this.sparks.emitParticleAt(bx, by, 16);
-    this.banner('덩어리가 부서졌다!\n미세 집게로 조심스럽게 꺼내세요', '#ffe082', 28);
+    this.banner('The boulder is cracked!\nNow tweeze the pieces out carefully', '#ffe082', 28);
     this.flinchInterval = 8;
     this.flinchT = 7;
   }
@@ -637,7 +637,7 @@ export class GameScene extends Phaser.Scene {
     this.crumbs.emitParticleAt(c.body.position.x, c.body.position.y, 10);
     this.synth.pop(0.85);
     this.synth.crunch(1.3);
-    this.floatText(c.body.position.x, c.body.position.y - c.r - 6, '뚝!', '#ffffff');
+    this.floatText(c.body.position.x, c.body.position.y - c.r - 6, 'Crack!', '#ffffff');
   }
 
   private collect(c: Chunk, via: 'exit' | 'vacuum') {
@@ -702,7 +702,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(240, 0.014);
     this.cameras.main.flash(150, 255, 40, 40);
     this.synth.hit();
-    this.floatText(this.swab.x - 30, this.swab.y - 30, '고막 충격!', '#ff5252');
+    this.floatText(this.swab.x - 30, this.swab.y - 30, 'Drum hit!', '#ff5252');
     if (this.st.hp <= 0) this.finish(false, 'DRUM');
   }
 
@@ -732,7 +732,7 @@ export class GameScene extends Phaser.Scene {
       this.st.hp -= dt * 7 * this.sensMult;
       this.st.minHp = Math.min(this.st.minHp, this.st.hp);
       this.hitFlashV = Math.max(this.hitFlashV, 0.35);
-      if (Math.random() < dt * 2.5) this.floatText(sw.x - 10, sw.y - 28, '공명 주의!', '#ff8a65');
+      if (Math.random() < dt * 2.5) this.floatText(sw.x - 10, sw.y - 28, 'Resonance!', '#ff8a65');
       if (this.st.hp <= 0) this.finish(false, 'DRUM');
     }
 
@@ -779,7 +779,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.cameras.main.shake(300, 0.015);
     this.synth.sneeze();
-    this.banner('에취!!', '#ffffff', 42);
+    this.banner('ACHOO!!', '#ffffff', 42);
   }
 
   private safety() {
@@ -844,37 +844,37 @@ export class GameScene extends Phaser.Scene {
     if (cleared) {
       if (this.run.mode === 'STAGE') {
         const base = 25 + 15 * this.run.stage;
-        bonuses.push({ label: `스테이지 ${this.run.stage} 클리어`, wax: base });
+        bonuses.push({ label: `Stage ${this.run.stage} clear`, wax: base });
         if (st.minHp >= 99.5) {
-          bonuses.push({ label: '무결점 · 고막 무손상', wax: Math.round(base * 0.5) });
+          bonuses.push({ label: 'Flawless · drum untouched', wax: Math.round(base * 0.5) });
           score += 500;
         }
         const par = stageParams(this.run.stage).parTime;
         if (st.time < par) {
           const sb = Math.round((par - st.time) * 0.6);
-          bonuses.push({ label: '스피드 보너스', wax: sb });
+          bonuses.push({ label: 'Speed bonus', wax: sb });
           score += sb * 8;
         }
         score += hpLeft * 5;
       } else if (this.run.mode === 'BOSS') {
-        bonuses.push({ label: '석회화 보스 처치', wax: 350 });
-        if (this.run.firstBoss) bonuses.push({ label: '최초 처치 보너스', wax: 250 });
-        bonuses.push({ label: '고막 보전', wax: hpLeft * 2 });
+        bonuses.push({ label: 'Lime boss defeated', wax: 350 });
+        if (this.run.firstBoss) bonuses.push({ label: 'First blood bonus', wax: 250 });
+        bonuses.push({ label: 'Eardrum spared', wax: hpLeft * 2 });
         const tb = Math.max(0, Math.round(120 - st.time));
         score += 1500 + hpLeft * 20 + tb * 15;
-        if (tb > 0) bonuses.push({ label: '스피드 보너스', wax: Math.round(tb * 0.8) });
+        if (tb > 0) bonuses.push({ label: 'Speed bonus', wax: Math.round(tb * 0.8) });
       }
     } else {
       if (this.run.mode === 'STAGE') {
         wax = Math.round(wax * 0.6);
-        bonuses.push({ label: '실패 (수확 60%만 회수)', wax: 0 });
+        bonuses.push({ label: 'Failed (only 60% recovered)', wax: 0 });
       } else if (this.run.mode === 'BOSS') {
         wax = Math.round(wax * 0.5);
-        bonuses.push({ label: '실패 (수확 50%만 회수)', wax: 0 });
+        bonuses.push({ label: 'Failed (only 50% recovered)', wax: 0 });
         score += st.cracks * 400;
       } else {
         const tb = Math.floor(st.time * 0.5);
-        bonuses.push({ label: '생존 시간 보너스', wax: tb });
+        bonuses.push({ label: 'Survival time bonus', wax: tb });
         score += Math.floor(st.time) * 3 + st.depth * 100;
       }
     }
@@ -900,13 +900,13 @@ export class GameScene extends Phaser.Scene {
     if (cleared) {
       this.synth.win();
       this.cameras.main.flash(400, 255, 236, 160);
-      this.banner(this.run.mode === 'BOSS' ? '보스 격파!' : '클리어!', '#ffe066', 52);
+      this.banner(this.run.mode === 'BOSS' ? 'BOSS DOWN!' : 'CLEAR!', '#ffe066', 52);
       this.sparks.emitParticleAt(W / 2, H / 2, 30);
     } else {
       this.synth.lose();
       this.cameras.main.shake(500, 0.02);
       this.cameras.main.flash(300, 255, 30, 30);
-      this.banner(reason === 'CLOG' ? '귓구멍이 막혔다!' : '고막 파열!', '#ff5252', 52);
+      this.banner(reason === 'CLOG' ? 'Canal clogged!' : 'Eardrum burst!', '#ff5252', 52);
     }
     this.time.delayedCall(1300, () => this.cb.onEnd(result));
   }

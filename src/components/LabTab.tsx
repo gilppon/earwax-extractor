@@ -31,8 +31,8 @@ export function LabTab() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">🔬 귓밥 광산 연구소</h1>
-        <p className="text-sm text-white/60">캐낸 귓밥으로 도구를 강화하고, 광산을 자동화하세요.</p>
+        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">🔬 Earwax Mining Lab</h1>
+        <p className="text-sm text-white/60">Spend mined wax on tools, and automate the mine.</p>
       </div>
 
       {msg && (
@@ -50,13 +50,13 @@ export function LabTab() {
       <Card className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="text-5xl">🤖</div>
         <div className="flex-1">
-          <div className="text-lg font-bold">자동 채굴 드론 · Lv.{save.drone}</div>
+          <div className="text-lg font-bold">Auto-Mining Drone · Lv.{save.drone}</div>
           {save.drone === 0 ? (
-            <p className="text-sm text-white/60">아래 강화 목록에서 드론을 설치하면 접속하지 않아도 귓밥이 쌓입니다.</p>
+            <p className="text-sm text-white/60">Install the drone below and wax piles up even while you're away.</p>
           ) : (
             <>
               <p className="text-sm text-white/70">
-                분당 {(droneRate(save.drone) * 60).toFixed(0)} 귓밥 · 최대 {Math.round(DRONE_CAP_SEC / 60)}분 적재 ({cap.toLocaleString()})
+                {(droneRate(save.drone) * 60).toFixed(0)} wax/min · holds {Math.round(DRONE_CAP_SEC / 60)} min max ({cap.toLocaleString()})
               </p>
               <Bar value={cap ? pending / cap : 0} color="bg-gradient-to-r from-amber-300 to-orange-400" className="mt-2" />
             </>
@@ -71,18 +71,18 @@ export function LabTab() {
               if (n > 0) {
                 synth.unlock();
                 synth.coin(1);
-                flash(`드론 수확 +${n} 귓밥!`, true);
+                flash(`Drone harvest +${n} wax!`, true);
               }
             }}
           >
-            수확 <Wax n={pending} className="!text-amber-900" />
+            Collect <Wax n={pending} className="!text-amber-900" />
           </Btn>
         )}
       </Card>
 
       {/* Tools */}
       <section>
-        <SectionTitle sub="extractorToolType">탐사 도구</SectionTitle>
+        <SectionTitle sub="extractorToolType">Extraction tools</SectionTitle>
         <div className="grid gap-3 md:grid-cols-3">
           {TOOL_ORDER.map((t) => {
             const def = TOOLS[t];
@@ -100,18 +100,18 @@ export function LabTab() {
                 <p className="flex-1 text-sm text-white/70">{def.desc}</p>
                 <div className="grid grid-cols-3 gap-1 text-center text-[11px] text-white/60">
                   <div className="rounded-lg bg-black/30 p-1">
-                    팁 <b className="text-white">{def.radius * 2}px</b>
+                    Tip <b className="text-white">{def.radius * 2}px</b>
                   </div>
                   <div className="rounded-lg bg-black/30 p-1">
-                    출력 <b className="text-white">×{def.power}</b>
+                    Power <b className="text-white">×{def.power}</b>
                   </div>
                   <div className="rounded-lg bg-black/30 p-1">
-                    떨림 <b className="text-white">×{def.tremor}</b>
+                    Tremor <b className="text-white">×{def.tremor}</b>
                   </div>
                 </div>
                 {owned ? (
                   <Btn variant={equipped ? 'ghost' : 'primary'} disabled={equipped} onClick={() => actions.equipTool(t)}>
-                    {equipped ? '✔ 장착 중' : '장착하기'}
+                    {equipped ? '✔ Equipped' : 'Equip'}
                   </Btn>
                 ) : (
                   <Btn
@@ -120,14 +120,14 @@ export function LabTab() {
                       synth.unlock();
                       if (actions.buyTool(t)) {
                         synth.buy();
-                        flash(`${def.name} 구입 완료!`, true);
+                        flash(`${def.name} purchased!`, true);
                       } else {
                         synth.click();
-                        flash('귓밥이 부족해요…', false);
+                        flash('Not enough wax…', false);
                       }
                     }}
                   >
-                    구입 <Wax n={def.cost} className="!text-rose-950" />
+                    Buy <Wax n={def.cost} className="!text-rose-950" />
                   </Btn>
                 )}
               </Card>
@@ -138,7 +138,7 @@ export function LabTab() {
 
       {/* Upgrades */}
       <section>
-        <SectionTitle sub="영구 강화">연구 & 업그레이드</SectionTitle>
+        <SectionTitle sub="Permanent upgrades">Research & upgrades</SectionTitle>
         <div className="grid gap-3 md:grid-cols-2">
           {UPGRADES.map((u) => {
             const lvl = getLevel(save, u.id);
@@ -177,16 +177,16 @@ export function LabTab() {
                       synth.unlock();
                       if (actions.buyUpgrade(u.id)) {
                         synth.buy();
-                        flash(`${u.name} 강화 완료!`, true);
+                        flash(`${u.name} upgraded!`, true);
                       } else {
                         synth.click();
-                        flash('귓밥이 부족해요…', false);
+                        flash('Not enough wax…', false);
                       }
                     }}
                   >
                     {maxed ? 'MAX' : (
                       <>
-                        {u.id === 'drone' && lvl === 0 ? '설치' : '강화'} <Wax n={cost} size={14} className={can ? '!text-amber-900' : ''} />
+                        {u.id === 'drone' && lvl === 0 ? 'Install' : 'Upgrade'} <Wax n={cost} size={14} className={can ? '!text-amber-900' : ''} />
                       </>
                     )}
                   </Btn>
@@ -199,18 +199,18 @@ export function LabTab() {
 
       {/* Stats */}
       <section>
-        <SectionTitle>광산 통계</SectionTitle>
+        <SectionTitle>Mine stats</SectionTitle>
         <Card>
           <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
             {[
-              ['누적 귓밥 수익', save.totalWax.toLocaleString()],
-              ['출격 횟수', save.runs.toLocaleString()],
-              ['적출한 덩어리', save.totalExtracted.toLocaleString()],
-              ['탐사 진행', `${save.stageCleared}/${STAGE_COUNT}`],
-              ['보스 처치', save.bossDefeated ? '완료 ✔' : '미처치'],
-              ['무한 최고 깊이', `Lv.${save.bestDepth}`],
-              ['고막 보호막', `Lv.${save.tympanicSensitivity}`],
-              ['해금한 귀', `${save.unlockedEars.length}/4`],
+              ['Total wax mined', save.totalWax.toLocaleString()],
+              ['Runs', save.runs.toLocaleString()],
+              ['Chunks extracted', save.totalExtracted.toLocaleString()],
+              ['Stage progress', `${save.stageCleared}/${STAGE_COUNT}`],
+              ['Boss kills', save.bossDefeated ? 'Done ✔' : 'None yet'],
+              ['Best endless depth', `Lv.${save.bestDepth}`],
+              ['Eardrum membrane', `Lv.${save.tympanicSensitivity}`],
+              ['Ears unlocked', `${save.unlockedEars.length}/4`],
             ].map(([k, v]) => (
               <div key={k} className="rounded-xl bg-black/25 p-3">
                 <div className="text-xs text-white/50">{k}</div>
@@ -221,17 +221,17 @@ export function LabTab() {
           <div className="mt-4 text-right">
             {confirmReset ? (
               <span className="inline-flex items-center gap-2 text-sm">
-                정말 초기화할까요?
+                Really reset everything?
                 <Btn variant="danger" className="!px-3 !py-1" onClick={() => { actions.reset(); setConfirmReset(false); }}>
-                  초기화
+                  Reset
                 </Btn>
                 <Btn variant="ghost" className="!px-3 !py-1" onClick={() => setConfirmReset(false)}>
-                  취소
+                  Cancel
                 </Btn>
               </span>
             ) : (
               <button className="text-xs text-white/40 underline" onClick={() => setConfirmReset(true)}>
-                세이브 데이터 초기화
+                Erase save data
               </button>
             )}
           </div>

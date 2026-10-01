@@ -38,22 +38,22 @@ export interface SaveData extends EarwaxMinerData {
   totalExtracted: number;
   totalWax: number;
   runs: number;
-  clears: number; // 스테이지/보스 클리어 총 횟수
+  clears: number; // total stage/boss clears
   bestDepth: number;
   nickname: string;
   lastCollect: number;
   muted: boolean;
   boards: Record<GameMode, ScoreEntry[]>;
-  lowFx: boolean; // 저사양 이펙트 모드
-  lastDaily: number; // 일일 보상 마지막 수령 시각
-  dailyStreak: number; // 연속 출석 (1~7)
-  claimedMilestones: number[]; // 수령한 업적 기준값
-  tutorialDone: boolean; // 첫판 코치마크 완료
+  lowFx: boolean; // low-spec effects mode
+  lastDaily: number; // timestamp of the last daily-bonus claim
+  dailyStreak: number; // check-in streak (1~7)
+  claimedMilestones: number[]; // milestone thresholds already claimed
+  tutorialDone: boolean; // first-run coach marks finished
 }
 
 const KEY = 'extreme-earwax-miner-v1';
 
-// ── 일일 보상 / 업적 테이블 ──
+// ── Daily bonus / milestone tables ──
 const DAILY_WAX = [20, 30, 45, 60, 90, 130, 200];
 
 type MilestoneKind = 'extracted' | 'wins' | 'boss' | 'stages';
@@ -67,13 +67,13 @@ interface Milestone {
 }
 
 export const MILESTONES: Milestone[] = [
-  { kind: 'extracted', at: 30, wax: 60, emoji: '🧹', label: '귀밥 30개 적출' },
-  { kind: 'extracted', at: 120, wax: 180, emoji: '🧹', label: '귀밥 120개 적출' },
-  { kind: 'wins', at: 5, wax: 100, emoji: '🎉', label: '클리어 5회' },
-  { kind: 'wins', at: 20, wax: 350, emoji: '🎉', label: '클리어 20회' },
-  { kind: 'stages', at: 4, wax: 200, emoji: '🗺️', label: 'STAGE 4 도달' },
-  { kind: 'stages', at: 8, wax: 600, emoji: '🏆', label: 'STAGE 8 클리어' },
-  { kind: 'boss', at: 1, wax: 500, emoji: '🪨', label: '석회화 보스 격파' },
+  { kind: 'extracted', at: 30, wax: 60, emoji: '🧹', label: 'Extract 30 wax' },
+  { kind: 'extracted', at: 120, wax: 180, emoji: '🧹', label: 'Extract 120 wax' },
+  { kind: 'wins', at: 5, wax: 100, emoji: '🎉', label: '5 clears' },
+  { kind: 'wins', at: 20, wax: 350, emoji: '🎉', label: '20 clears' },
+  { kind: 'stages', at: 4, wax: 200, emoji: '🗺️', label: 'Reach STAGE 4' },
+  { kind: 'stages', at: 8, wax: 600, emoji: '🏆', label: 'Clear STAGE 8' },
+  { kind: 'boss', at: 1, wax: 500, emoji: '🪨', label: 'Defeat the lime boss' },
 ];
 
 function achieved(m: Milestone): boolean {
@@ -109,7 +109,7 @@ function defaults(): SaveData {
     runs: 0,
     clears: 0,
     bestDepth: 1,
-    nickname: '귀파기 신입',
+    nickname: 'Wax Rookie',
     lastCollect: Date.now(),
     muted: false,
     boards: seedBoards(),
@@ -257,12 +257,12 @@ export const actions = {
     return n;
   },
 
-  /** 광고 2배 보상 (결과당 1회, 호출 측에서 가드) */
+  /** 2× ad reward (once per result; the caller guards it) */
   doubleWax(amount: number) {
     if (amount > 0) set({ wax: state.wax + amount, totalWax: state.totalWax + amount });
   },
 
-  /** 튜토리얼 수료 보상 */
+  /** Tutorial completion reward */
   bonusWax(amount: number) {
     if (amount > 0) set({ wax: state.wax + amount, totalWax: state.totalWax + amount });
   },
@@ -308,7 +308,7 @@ export const actions = {
     set({ tutorialDone: true });
   },
 
-  // ── 일일 보상 (7일 사이클) ──
+  // ── Daily bonus (7-day cycle) ──
   dailyStatus(): { available: boolean; day: number; wax: number } {
     const now = Date.now();
     const today = new Date(now).toDateString();
@@ -329,7 +329,7 @@ export const actions = {
     return st.wax;
   },
 
-  // ── 업적 (누적 적출/클리어/점수 기준) ──
+  // ── Milestones (lifetime extract / clear / score) ──
   claimableMilestone(): Milestone | null {
     for (const m of MILESTONES) {
       if (achieved(m) && !state.claimedMilestones.includes(m.at)) return m;
@@ -349,7 +349,7 @@ export const actions = {
   },
 
   setNickname(name: string) {
-    const n = name.trim().slice(0, 12) || '귀파기 신입';
+    const n = name.trim().slice(0, 12) || 'Wax Rookie';
     const mark = (list: ScoreEntry[]) => list.map((e) => (e.mine ? { ...e, name: n } : e));
     set({
       nickname: n,

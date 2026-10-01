@@ -16,10 +16,10 @@ interface Props {
 }
 
 const TABS: { id: Tab; icon: string; label: string }[] = [
-  { id: 'mission', icon: '🚀', label: '출격' },
-  { id: 'lab', icon: '🔬', label: '연구소' },
-  { id: 'ears', icon: '👂', label: '귀 주인' },
-  { id: 'rank', icon: '🏆', label: '랭킹' },
+  { id: 'mission', icon: '🚀', label: 'Expedition' },
+  { id: 'lab', icon: '🔬', label: 'Lab' },
+  { id: 'ears', icon: '👂', label: 'Ears' },
+  { id: 'rank', icon: '🏆', label: 'Ranks' },
 ];
 
 export function Hub({ tab, setTab, onStart }: Props) {
@@ -35,7 +35,7 @@ export function Hub({ tab, setTab, onStart }: Props) {
         <div className="flex items-center gap-2">
           <span className="animate-wobble inline-block text-2xl">👂</span>
           <div className="leading-tight">
-            <div className="text-sm font-bold text-amber-200 sm:text-base">귓밥 광산 주식회사</div>
+            <div className="text-sm font-bold text-amber-200 sm:text-base">Earwax Mining Corp.</div>
             <div className="hidden text-[10px] tracking-[0.25em] text-white/40 sm:block">EARWAX MINING CORP.</div>
           </div>
         </div>
@@ -43,7 +43,7 @@ export function Hub({ tab, setTab, onStart }: Props) {
           <button
             onClick={() => actions.claimDaily()}
             disabled={!daily.available}
-            title="매일 출석 보상"
+            title="Daily check-in bonus"
             className={cn(
               'rounded-full px-3 py-1.5 text-sm font-bold ring-1 transition',
               daily.available
@@ -51,7 +51,7 @@ export function Hub({ tab, setTab, onStart }: Props) {
                 : 'cursor-default bg-white/10 text-white/50 ring-white/10',
             )}
           >
-            {daily.available ? `📅 출석 +${daily.wax} (${daily.day}일)` : `📅 ${daily.day}일 출석`}
+            {daily.available ? `📅 Check in +${daily.wax} (day ${daily.day})` : `📅 Day ${daily.day} checked in`}
           </button>
           {milestone && (
             <button
@@ -66,8 +66,8 @@ export function Hub({ tab, setTab, onStart }: Props) {
             <Wax n={save.wax} size={18} className="text-base" />
           </div>
           <button
-            aria-label="이펙트 토글"
-            title={save.lowFx ? '이펙트 절약 켜짐' : '이펙트 풍부'}
+            aria-label="Toggle effects"
+            title={save.lowFx ? 'Low effects on' : 'Full effects'}
             onClick={() => actions.setLowFx(!save.lowFx)}
             className={cn(
               'rounded-full px-3 py-1.5 text-base',
@@ -77,7 +77,7 @@ export function Hub({ tab, setTab, onStart }: Props) {
             {save.lowFx ? '✨' : '💥'}
           </button>
           <button
-            aria-label="사운드 토글"
+            aria-label="Toggle sound"
             onClick={() => {
               synth.unlock();
               const m = !save.muted;

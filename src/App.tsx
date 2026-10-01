@@ -18,7 +18,7 @@ export default function App() {
     synth.setMuted(save.muted);
   }, [save.muted]);
 
-  // 포털 SDK 초기화 (실패해도 게임은 정상 동작)
+  // Init the portal SDK (the game still runs fine if it fails)
   useEffect(() => {
     void Poki.init().then(() => Poki.loadingFinished());
   }, []);

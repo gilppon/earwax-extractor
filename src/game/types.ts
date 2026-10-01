@@ -25,7 +25,7 @@ export interface RunConfig {
   sensitivity: number;
   lungs: number;
   firstBoss: boolean;
-  reviveBuff?: boolean; // 부활 재도전: 고막 내구 +30%
+  reviveBuff?: boolean; // retry with revive: +30% eardrum durability
 }
 
 export interface Bonus {

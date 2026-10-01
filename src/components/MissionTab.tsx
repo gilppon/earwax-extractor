@@ -18,12 +18,12 @@ const lastSel: { mode: GameMode; stage: number } = { mode: 'STAGE', stage: 0 };
 function stageFeatures(n: number) {
   const p = stageParams(n);
   const f: string[] = [];
-  if (p.hairs > 0) f.push(`🧶 털 ${p.hairs}`);
-  if (p.gold > 0) f.push('✨ 황금 귓밥');
-  if (p.hard > 0) f.push('🪨 석회 귓밥');
-  if (p.danger > 0) f.push('🎯 고막 앞 귓밥');
-  if (p.flinch > 0) f.push('🤧 재채기');
-  if (p.sway > 0) f.push('🌪️ 중력 흔들림');
+  if (p.hairs > 0) f.push(`🧶 Fur ${p.hairs}`);
+  if (p.gold > 0) f.push('✨ Golden wax');
+  if (p.hard > 0) f.push('🪨 Lime wax');
+  if (p.danger > 0) f.push('🎯 Drum-side wax');
+  if (p.flinch > 0) f.push('🤧 Sneezing');
+  if (p.sway > 0) f.push('🌪️ Gravity sway');
   return f;
 }
 
@@ -49,23 +49,23 @@ export function MissionTab({ onStart, goTab }: Props) {
     {
       id: 'STAGE',
       icon: '🧪',
-      name: '탐사 모드',
-      desc: '8개 스테이지! 귓밥을 출구(왼쪽)로 꺼내자.',
-      extra: `진행 ${save.stageCleared}/${STAGE_COUNT}`,
+      name: 'Expedition',
+      desc: '8 stages! Drag the wax out the exit (left).',
+      extra: `Progress ${save.stageCleared}/${STAGE_COUNT}`,
     },
     {
       id: 'BOSS',
       icon: '🪨',
-      name: '석회화 보스전',
-      desc: '고막 앞 돌덩이! 진동으로 균열 3회 → 집게로 적출.',
-      extra: save.bossDefeated ? '처치 완료 ✔' : bossUnlocked ? '도전 가능' : '🔒 미세 집게 필요',
+      name: 'Lime Boulder Boss',
+      desc: 'A boulder by the eardrum! Buzz it 3× → tweeze it out.',
+      extra: save.bossDefeated ? 'Defeated ✔' : bossUnlocked ? 'Ready to fight' : '🔒 Needs Micro Tweezers',
     },
     {
       id: 'ENDLESS',
       icon: '♾️',
-      name: '무한 귓속 광산',
-      desc: '귓밥이 끝없이 솟구치고 귀가 흔들린다. 막히기 전에 파내라!',
-      extra: `최고 깊이 Lv.${save.bestDepth}`,
+      name: 'Endless Earwax Mine',
+      desc: 'Wax bubbles up forever and the ear keeps swaying. Dig before it clogs!',
+      extra: `Best depth Lv.${save.bestDepth}`,
     },
   ];
 
@@ -78,16 +78,16 @@ export function MissionTab({ onStart, goTab }: Props) {
         <div className="mt-3 text-center">
           <div className="text-xs tracking-[0.35em] text-rose-300/80">EXTREME EARWAX MINER</div>
           <h1 className="mt-1 bg-gradient-to-b from-amber-200 to-amber-400 bg-clip-text text-3xl font-bold text-transparent sm:text-5xl">
-            지옥의 귓밥 파기 스나이퍼
+            Hellish Earwax Sniper
           </h1>
           <p className="mx-auto mt-2 max-w-xl text-sm text-white/70 sm:text-base">
-            떨리는 손으로 고막을 건드리지 않고 귓밥을 캐내라. 이어폰을 끼면 ASMR이 더 짜릿하다 🎧
+            Dig out the wax without touching the eardrum — with a hand that won't stop shaking. Put on earphones for maximum ASMR 🎧
           </p>
         </div>
       </div>
 
       <section>
-        <SectionTitle sub="모드를 선택하세요">출격 모드</SectionTitle>
+        <SectionTitle sub="Pick your mode">Launch mode</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-3">
           {modes.map((m) => {
             const locked = m.id === 'BOSS' && !bossUnlocked;
@@ -123,7 +123,7 @@ export function MissionTab({ onStart, goTab }: Props) {
 
       {mode === 'STAGE' && (
         <section>
-          <SectionTitle sub={`${STAGE_NAMES[stage - 1]}`}>스테이지 선택</SectionTitle>
+          <SectionTitle sub={`${STAGE_NAMES[stage - 1]}`}>Select stage</SectionTitle>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
             {Array.from({ length: STAGE_COUNT }, (_, i) => i + 1).map((n) => {
               const unlocked = n <= save.stageCleared + 1;
@@ -152,45 +152,45 @@ export function MissionTab({ onStart, goTab }: Props) {
             <b className="text-amber-200">
               STAGE {stage} · {STAGE_NAMES[stage - 1]}
             </b>{' '}
-            — 귓밥 {stageParams(stage).target}개 적출
+            — extract ${stageParams(stage).target} wax
             <div className="mt-1 flex flex-wrap gap-2 text-xs text-white/70">
               {stageFeatures(stage).map((f) => (
                 <span key={f} className="rounded-full bg-white/10 px-2 py-0.5">
                   {f}
                 </span>
               ))}
-              {stageFeatures(stage).length === 0 && <span>기본 코스 — 워밍업!</span>}
+              {stageFeatures(stage).length === 0 && <span>Default course — warm-up!</span>}
             </div>
           </Card>
         </section>
       )}
 
       <section>
-        <SectionTitle sub="연구소에서 도구를 해금하세요">출격 장비</SectionTitle>
+        <SectionTitle sub="Unlock tools in the lab">Gear</SectionTitle>
         <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
           <Card className="flex items-center gap-4">
             <EarAvatar ear={save.selectedEar} size={68} />
             <div className="min-w-0 flex-1">
-              <div className="text-xs text-white/50">귀 주인</div>
+              <div className="text-xs text-white/50">Ear owner</div>
               <div className="truncate text-lg font-bold">{ear.name}</div>
               <div className="text-xs text-amber-200/80">{ear.perks.slice(-1)[0]}</div>
               <button onClick={() => goTab('ears')} className="mt-1 text-xs text-rose-300 underline underline-offset-2">
-                귀 주인 바꾸기
+                Change ear owner
               </button>
             </div>
           </Card>
 
           {mode === 'BOSS' ? (
             <Card className="text-sm text-white/80">
-              <div className="mb-1 text-lg font-bold text-amber-200">🔧 보스전 전용 장비</div>
+              <div className="mb-1 text-lg font-bold text-amber-200">🔧 Boss-only gear</div>
               <p>
-                <b>1단계</b> 📳 음파 진동기 — 보스에 가만히 대고 <b>클릭 유지</b>. 균열 3회!
+                <b>Phase 1</b> 📳 Sonic Vibrator — park it on the boss and <b>hold click</b>. Three cracks!
                 <br />
-                <b>2단계</b> 🥢 미세 집게 — 부서진 조각 3개를 고막을 피해 조심스럽게 꺼내기.
+                <b>Phase 2</b> 🥢 Micro Tweezers — pull 3 broken pieces out without scratching the eardrum.
               </p>
               {!bossUnlocked && (
                 <Btn variant="pink" className="mt-2" onClick={() => goTab('lab')}>
-                  연구소에서 미세 집게 구입
+                  Buy Micro Tweezers in the lab
                 </Btn>
               )}
             </Card>
@@ -216,7 +216,7 @@ export function MissionTab({ onStart, goTab }: Props) {
                   >
                     <div className="text-3xl">{TOOLS[t].emoji}</div>
                     <div className="mt-1 text-sm font-bold leading-tight">{TOOLS[t].name}</div>
-                    <div className="mt-0.5 text-[11px] text-white/50">{owned ? (active ? '장착 중' : '탭하여 장착') : '🔒 미보유'}</div>
+                    <div className="mt-0.5 text-[11px] text-white/50">{owned ? (active ? 'Equipped' : 'Tap to equip') : '🔒 Locked'}</div>
                   </button>
                 );
               })}
@@ -241,7 +241,7 @@ export function MissionTab({ onStart, goTab }: Props) {
             onStart(mode, stage);
           }}
         >
-          {canStart ? '🚀 출격! 귓속 탐사 시작' : '🔒 미세 집게가 필요합니다'}
+          {canStart ? '🚀 Launch! Start mining' : '🔒 Micro Tweezers required'}
         </Btn>
       </div>
     </div>
