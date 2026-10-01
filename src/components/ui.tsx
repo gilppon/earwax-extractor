@@ -29,7 +29,7 @@ export function Wax({ n, className, size = 16 }: { n: number; className?: string
   return (
     <span className={cn('inline-flex items-center gap-1 font-bold text-amber-300', className)}>
       <WaxDot size={size} />
-      {n.toLocaleString()}
+      {n.toLocaleString('en-US')}
     </span>
   );
 }

@@ -8,7 +8,7 @@ import { Btn, Card } from './ui';
 const MODES: { id: GameMode; label: string; icon: string }[] = [
   { id: 'ENDLESS', label: 'Endless', icon: '♾️' },
   { id: 'BOSS', label: 'Boss', icon: '🪨' },
-  { id: 'STAGE', label: 'Stages', icon: '🧪' },
+  { id: 'STAGE', label: 'Expedition', icon: '🧪' },
 ];
 
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -77,7 +77,7 @@ export function RankTab() {
                   {e.rival ? 'Rival miner' : `${e.ear ? EARS[e.ear].emoji + ' ' + EARS[e.ear].name : ''} · ${new Date(e.date).toLocaleDateString('en-US')}`}
                 </div>
               </div>
-              <div className="text-lg font-bold text-amber-300">{e.score.toLocaleString()}</div>
+              <div className="text-lg font-bold text-amber-300">{e.score.toLocaleString('en-US')}</div>
             </li>
           ))}
         </ol>

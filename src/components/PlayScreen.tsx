@@ -26,7 +26,7 @@ interface Summary {
 }
 
 const REASONS: Record<string, string> = {
-  CLEAR: 'Extracted flawlessly!',
+  CLEAR: 'Clean run! You got every chunk out.',
   DRUM: 'Eardrum ruptured… the owner passed out.',
   CLOG: 'The canal is now 100% earwax!',
 };
@@ -207,7 +207,7 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
 
   const goal =
     run.mode === 'STAGE'
-      ? `Drag ${stageParams(run.stage).target} wax out past the exit on the left.`
+      ? `Drag ${stageParams(run.stage).target} chunks out past the exit on the left.`
       : run.mode === 'ENDLESS'
         ? 'Wax keeps bubbling up forever. Dig as deep as you can while the canal holds — and the eardrum survives!'
         : '① Crack the boss 3× with the sonic vibrator → ② Tweeze out 3 pieces without damage!';
@@ -231,11 +231,11 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
       {started && !result && !paused && !save.tutorialDone && (
         <div className="pointer-events-none absolute inset-x-[4cqw] bottom-[16cqw] z-10 animate-pop rounded-2xl bg-slate-900/80 p-[3cqw] text-center leading-snug font-bold text-white" style={{ fontSize: '3.4cqw' }}>
           {missionStep === 4 ? (
-            <div className="text-emerald-300">🎓 Coach done! +30 wax bonus</div>
+            <div className="text-emerald-300">🎓 Tutorial done! +30 wax bonus</div>
           ) : (
             <>
               <div className="mb-[1.5cqw] flex justify-center gap-[1.5cqw]">
-                {['Grab with tool', 'Extract 1 wax', 'Extract 3 wax'].map((s, i) => (
+                {['Grab with tool', 'Extract 1 chunk', 'Extract 3 chunks'].map((s, i) => (
                   <span
                     key={s}
                     className={cn(
@@ -253,8 +253,8 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
                 ))}
               </div>
               {missionStep === 0 && <div>👆 <span className="text-amber-300">Click and hold</span> anywhere!</div>}
-              {missionStep === 1 && <div>🩸 Drag the wax to the <span className="text-amber-300">exit on the left (◀)</span>!</div>}
-              {missionStep === 2 && <div>👏 Pull <span className="text-amber-300">3 wax</span> out total! (watch the drum)</div>}
+              {missionStep === 1 && <div>🧻 Drag the chunks to the <span className="text-amber-300">exit on the left (◀)</span>!</div>}
+              {missionStep === 2 && <div>👏 Pull <span className="text-amber-300">3 chunks</span> out in total! (watch the drum)</div>}
             </>
           )}
         </div>
@@ -388,7 +388,7 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
             <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
               <div className="rounded-xl bg-black/30 p-2">
                 <div className="text-xs text-white/50">Score</div>
-                <div className="text-lg font-bold">{result.score.toLocaleString()}</div>
+                <div className="text-lg font-bold">{result.score.toLocaleString('en-US')}</div>
               </div>
               <div className="rounded-xl bg-black/30 p-2">
                 <div className="text-xs text-white/50">Extracted</div>
@@ -436,12 +436,12 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
               )}
               {!result.cleared && (
                 <Btn variant="pink" className="col-span-2" disabled={adBusy} onClick={watchRevive}>
-                  🎬 {adBusy ? 'Ad loading...' : 'Watch ad: retry with +30% eardrum'}
+                  🎬 {adBusy ? 'Ad loading…' : 'Watch an ad to retry with +30% eardrum'}
                 </Btn>
               )}
               {result.wax > 0 && !doubled && (
                 <Btn variant="primary" className="col-span-2" disabled={adBusy} onClick={watchDouble}>
-                  🎬 {adBusy ? 'Ad loading...' : `Watch ad: 2× wax (+${result.wax})`}
+                  🎬 {adBusy ? 'Ad loading…' : `Watch an ad to double your wax (+${result.wax.toLocaleString('en-US')})`}
                 </Btn>
               )}
               {doubled && (
@@ -454,7 +454,7 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
                 🔬 Lab
               </Btn>
               <Btn variant="ghost" className="col-span-2" onClick={() => onExit('mission')}>
-                🏠 Home
+                🏠 Expedition
               </Btn>
             </div>
             {!result.cleared && (

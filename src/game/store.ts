@@ -67,13 +67,13 @@ interface Milestone {
 }
 
 export const MILESTONES: Milestone[] = [
-  { kind: 'extracted', at: 30, wax: 60, emoji: '🧹', label: 'Extract 30 wax' },
-  { kind: 'extracted', at: 120, wax: 180, emoji: '🧹', label: 'Extract 120 wax' },
-  { kind: 'wins', at: 5, wax: 100, emoji: '🎉', label: '5 clears' },
-  { kind: 'wins', at: 20, wax: 350, emoji: '🎉', label: '20 clears' },
+  { kind: 'extracted', at: 30, wax: 60, emoji: '🧹', label: 'Extract 30 chunks' },
+  { kind: 'extracted', at: 120, wax: 180, emoji: '🧹', label: 'Extract 120 chunks' },
+  { kind: 'wins', at: 5, wax: 100, emoji: '🎉', label: 'Clear 5 runs' },
+  { kind: 'wins', at: 20, wax: 350, emoji: '🎉', label: 'Clear 20 runs' },
   { kind: 'stages', at: 4, wax: 200, emoji: '🗺️', label: 'Reach STAGE 4' },
   { kind: 'stages', at: 8, wax: 600, emoji: '🏆', label: 'Clear STAGE 8' },
-  { kind: 'boss', at: 1, wax: 500, emoji: '🪨', label: 'Defeat the lime boss' },
+  { kind: 'boss', at: 1, wax: 500, emoji: '🪨', label: 'Defeat the Lime Boulder Boss' },
 ];
 
 function achieved(m: Milestone): boolean {

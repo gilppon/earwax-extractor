@@ -36,7 +36,7 @@ export function Hub({ tab, setTab, onStart }: Props) {
           <span className="animate-wobble inline-block text-2xl">👂</span>
           <div className="leading-tight">
             <div className="text-sm font-bold text-amber-200 sm:text-base">Earwax Mining Corp.</div>
-            <div className="hidden text-[10px] tracking-[0.25em] text-white/40 sm:block">EARWAX MINING CORP.</div>
+            <div className="hidden text-[10px] tracking-[0.25em] text-white/40 sm:block">NO SAFETY GOGGLES REQUIRED</div>
           </div>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -51,7 +51,7 @@ export function Hub({ tab, setTab, onStart }: Props) {
                 : 'cursor-default bg-white/10 text-white/50 ring-white/10',
             )}
           >
-            {daily.available ? `📅 Check in +${daily.wax} (day ${daily.day})` : `📅 Day ${daily.day} checked in`}
+            {daily.available ? `📅 Check in: +${daily.wax} wax (day ${daily.day})` : `📅 Day ${daily.day} checked in`}
           </button>
           {milestone && (
             <button
@@ -59,7 +59,7 @@ export function Hub({ tab, setTab, onStart }: Props) {
               title={milestone.label}
               className="animate-pulse rounded-full bg-emerald-300 px-3 py-1.5 text-sm font-bold text-emerald-950 ring-1 ring-emerald-200"
             >
-              {milestone.emoji} +{milestone.wax}
+              {milestone.emoji} +{milestone.wax} wax
             </button>
           )}
           <div className="rounded-full bg-black/40 px-3 py-1.5 ring-1 ring-amber-300/30">

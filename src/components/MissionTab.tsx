@@ -50,7 +50,7 @@ export function MissionTab({ onStart, goTab }: Props) {
       id: 'STAGE',
       icon: '🧪',
       name: 'Expedition',
-      desc: '8 stages! Drag the wax out the exit (left).',
+      desc: `${STAGE_COUNT} stages! Drag the chunks out past the exit (left).`,
       extra: `Progress ${save.stageCleared}/${STAGE_COUNT}`,
     },
     {
@@ -87,7 +87,7 @@ export function MissionTab({ onStart, goTab }: Props) {
       </div>
 
       <section>
-        <SectionTitle sub="Pick your mode">Launch mode</SectionTitle>
+        <SectionTitle sub="Pick a run">Launch mode</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-3">
           {modes.map((m) => {
             const locked = m.id === 'BOSS' && !bossUnlocked;
@@ -152,14 +152,14 @@ export function MissionTab({ onStart, goTab }: Props) {
             <b className="text-amber-200">
               STAGE {stage} · {STAGE_NAMES[stage - 1]}
             </b>{' '}
-            — extract ${stageParams(stage).target} wax
+            — extract {stageParams(stage).target} chunks
             <div className="mt-1 flex flex-wrap gap-2 text-xs text-white/70">
               {stageFeatures(stage).map((f) => (
                 <span key={f} className="rounded-full bg-white/10 px-2 py-0.5">
                   {f}
                 </span>
               ))}
-              {stageFeatures(stage).length === 0 && <span>Default course — warm-up!</span>}
+              {stageFeatures(stage).length === 0 && <span>Standard layout — warm-up!</span>}
             </div>
           </Card>
         </section>
@@ -241,7 +241,7 @@ export function MissionTab({ onStart, goTab }: Props) {
             onStart(mode, stage);
           }}
         >
-          {canStart ? '🚀 Launch! Start mining' : '🔒 Micro Tweezers required'}
+          {canStart ? '🚀 Start mining' : '🔒 Micro Tweezers required'}
         </Btn>
       </div>
     </div>

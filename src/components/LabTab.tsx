@@ -32,7 +32,7 @@ export function LabTab() {
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">🔬 Earwax Mining Lab</h1>
-        <p className="text-sm text-white/60">Spend mined wax on tools, and automate the mine.</p>
+        <p className="text-sm text-white/60">Spend mined wax on tools and automate the mine.</p>
       </div>
 
       {msg && (
@@ -50,13 +50,16 @@ export function LabTab() {
       <Card className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="text-5xl">🤖</div>
         <div className="flex-1">
-          <div className="text-lg font-bold">Auto-Mining Drone · Lv.{save.drone}</div>
+          <div className="text-lg font-bold">
+            Auto-Mining Drone · {save.drone > 0 ? `Lv.${save.drone}` : 'Not installed'}
+          </div>
           {save.drone === 0 ? (
             <p className="text-sm text-white/60">Install the drone below and wax piles up even while you're away.</p>
           ) : (
             <>
               <p className="text-sm text-white/70">
-                {(droneRate(save.drone) * 60).toFixed(0)} wax/min · holds {Math.round(DRONE_CAP_SEC / 60)} min max ({cap.toLocaleString()})
+                {(droneRate(save.drone) * 60).toFixed(0)} wax/min · holds up to {Math.round(DRONE_CAP_SEC / 60)} min (
+                {cap.toLocaleString('en-US')})
               </p>
               <Bar value={cap ? pending / cap : 0} color="bg-gradient-to-r from-amber-300 to-orange-400" className="mt-2" />
             </>
@@ -82,7 +85,7 @@ export function LabTab() {
 
       {/* Tools */}
       <section>
-        <SectionTitle sub="extractorToolType">Extraction tools</SectionTitle>
+        <SectionTitle sub="Buy one, then equip it">Extraction tools</SectionTitle>
         <div className="grid gap-3 md:grid-cols-3">
           {TOOL_ORDER.map((t) => {
             const def = TOOLS[t];
@@ -120,7 +123,7 @@ export function LabTab() {
                       synth.unlock();
                       if (actions.buyTool(t)) {
                         synth.buy();
-                        flash(`${def.name} purchased!`, true);
+                        flash(`${def.name} unlocked!`, true);
                       } else {
                         synth.click();
                         flash('Not enough wax…', false);
@@ -138,7 +141,7 @@ export function LabTab() {
 
       {/* Upgrades */}
       <section>
-        <SectionTitle sub="Permanent upgrades">Research & upgrades</SectionTitle>
+        <SectionTitle sub="Spend wax to level them up">Research & upgrades</SectionTitle>
         <div className="grid gap-3 md:grid-cols-2">
           {UPGRADES.map((u) => {
             const lvl = getLevel(save, u.id);
@@ -203,11 +206,11 @@ export function LabTab() {
         <Card>
           <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
             {[
-              ['Total wax mined', save.totalWax.toLocaleString()],
-              ['Runs', save.runs.toLocaleString()],
-              ['Chunks extracted', save.totalExtracted.toLocaleString()],
+              ['Total wax mined', save.totalWax.toLocaleString('en-US')],
+              ['Runs', save.runs.toLocaleString('en-US')],
+              ['Chunks extracted', save.totalExtracted.toLocaleString('en-US')],
               ['Stage progress', `${save.stageCleared}/${STAGE_COUNT}`],
-              ['Boss kills', save.bossDefeated ? 'Done ✔' : 'None yet'],
+              ['Lime Boulder Boss', save.bossDefeated ? 'Defeated ✔' : 'Not yet'],
               ['Best endless depth', `Lv.${save.bestDepth}`],
               ['Eardrum membrane', `Lv.${save.tympanicSensitivity}`],
               ['Ears unlocked', `${save.unlockedEars.length}/4`],
@@ -221,9 +224,9 @@ export function LabTab() {
           <div className="mt-4 text-right">
             {confirmReset ? (
               <span className="inline-flex items-center gap-2 text-sm">
-                Really reset everything?
+                Really erase everything?
                 <Btn variant="danger" className="!px-3 !py-1" onClick={() => { actions.reset(); setConfirmReset(false); }}>
-                  Reset
+                  Erase
                 </Btn>
                 <Btn variant="ghost" className="!px-3 !py-1" onClick={() => setConfirmReset(false)}>
                   Cancel
@@ -231,7 +234,7 @@ export function LabTab() {
               </span>
             ) : (
               <button className="text-xs text-white/40 underline" onClick={() => setConfirmReset(true)}>
-                Erase save data
+                Erase all progress
               </button>
             )}
           </div>

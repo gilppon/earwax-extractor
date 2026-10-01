@@ -20,9 +20,9 @@ export function Hud({ hud, run, onPause }: Props) {
       <div className="absolute inset-x-0 top-0 z-10 flex h-[52px] items-center gap-2 border-b border-white/10 bg-black/70 px-2 backdrop-blur sm:gap-3 sm:px-3">
         {/* score */}
         <div className="shrink-0 leading-tight">
-          <div className="text-sm font-bold text-white sm:text-base">⭐ {hud.score.toLocaleString()}</div>
+          <div className="text-sm font-bold text-white sm:text-base">⭐ {hud.score.toLocaleString('en-US')}</div>
           <div className="flex items-center gap-1 text-xs text-amber-300">
-            <WaxDot size={12} /> {hud.wax.toLocaleString()}
+            <WaxDot size={12} /> {hud.wax.toLocaleString('en-US')}
           </div>
         </div>
 
@@ -45,8 +45,8 @@ export function Hud({ hud, run, onPause }: Props) {
         <div className="hidden shrink-0 items-center gap-2 text-xs sm:flex sm:text-sm">
           {run.mode === 'STAGE' && (
             <>
-              <span className="rounded-lg bg-white/10 px-2 py-1">
-Wax <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
+<span className="rounded-lg bg-white/10 px-2 py-1">
+                Chunks <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
               </span>
               <span className="rounded-lg bg-white/10 px-2 py-1">⏱ {fmtTime(hud.time)}</span>
             </>
@@ -104,7 +104,7 @@ Wax <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
       <div className="pointer-events-none absolute left-2 top-[58px] z-10 flex flex-wrap gap-1.5 text-xs sm:hidden">
         {run.mode === 'STAGE' && (
           <span className="rounded-lg bg-black/60 px-2 py-1">
-            Wax <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
+            Chunks <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
           </span>
         )}
         {run.mode === 'ENDLESS' && (

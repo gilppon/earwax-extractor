@@ -12,9 +12,10 @@ export function EarsTab() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">👂 Ear Owner Codex</h1>
+        <h1 className="text-2xl font-bold text-amber-200 sm:text-3xl">👂 Ear Owners</h1>
         <p className="text-sm text-white/60">
-          Every ear has its own terrain, gravity, fur and wax. The weirder the ear, the fatter the payout. (unlockedEars {save.unlockedEars.length}/4)
+          Every ear has its own terrain, gravity, fur, and wax. The weirder the ear, the fatter the payout. (Unlocked{' '}
+          {save.unlockedEars.length}/4)
         </p>
         {msg && <p className="mt-1 text-sm font-bold text-rose-300">{msg}</p>}
       </div>
@@ -63,7 +64,7 @@ export function EarsTab() {
                     actions.selectEar(id);
                   }}
                 >
-                  {selected ? '✔ Selected' : 'Mine with this ear'}
+                  {selected ? '✔ Current owner' : 'Set as owner'}
                 </Btn>
               ) : (
                 <Btn
