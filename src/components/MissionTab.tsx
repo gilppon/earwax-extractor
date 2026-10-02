@@ -238,6 +238,8 @@ export function MissionTab({ onStart, goTab }: Props) {
           onClick={() => {
             synth.unlock();
             synth.click();
+            // Music needs the same first gesture as the AudioContext itself.
+            synth.startMusic();
             onStart(mode, stage);
           }}
         >

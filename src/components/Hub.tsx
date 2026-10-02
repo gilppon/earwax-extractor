@@ -83,6 +83,8 @@ export function Hub({ tab, setTab, onStart }: Props) {
               const m = !save.muted;
               synth.setMuted(m);
               actions.setMuted(m);
+              // Unmuting is a gesture: (re)start the loop if it never got going.
+              if (!m) synth.startMusic();
             }}
             className="rounded-full bg-white/10 px-3 py-1.5 text-base hover:bg-white/20"
           >

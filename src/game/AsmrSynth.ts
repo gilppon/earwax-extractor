@@ -112,6 +112,73 @@ export class AsmrSynth {
     else void this.ctx.resume();
   }
 
+  // ── background music ────────────────────────────────────
+  // Quirky lurching groove in E minor. Reuses tone()/burst(), which already
+  // refuse to schedule while muted or ad-muted.
+  private musicBus: GainNode | null = null;
+  private musicTimer: number | null = null;
+  private musicStep = 0;
+
+  /** Idempotent. Call from a user gesture; AudioContext requires one. */
+  startMusic() {
+    this.unlock();
+    if (!this.ctx || !this.master) return;
+    if (!this.musicBus) {
+      this.musicBus = this.ctx.createGain();
+      this.musicBus.gain.value = 0.5;
+      this.musicBus.connect(this.master);
+    }
+    if (this.musicTimer !== null) return;
+    this.musicStep = 0;
+    this.musicTimer = window.setInterval(() => this.musicTick(), 180);
+  }
+
+  stopMusic() {
+    if (this.musicTimer !== null) {
+      window.clearInterval(this.musicTimer);
+      this.musicTimer = null;
+    }
+  }
+
+  private mtone(freq: number, dur: number, vol: number, type: OscillatorType, delay = 0) {
+    if (!this.ctx || !this.musicBus) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g);
+    g.connect(this.musicBus);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  private musicTick() {
+    // Never schedule while muted, ad-muted, hidden, or suspended; tails fade.
+    if (this.muted || this.adMuted || document.hidden) return;
+    if (!this.ctx || this.ctx.state !== 'running') return;
+    const s = this.musicStep++ % 32;
+    // Lurching dig-bass in E minor, square and low.
+    const bass = [82.41, 82.41, 98.0, 82.41, 110.0, 98.0, 82.41, 73.42,
+      82.41, 82.41, 98.0, 82.41, 110.0, 123.47, 98.0, 73.42];
+    const b = bass[s % 16];
+    if (b !== undefined) this.mtone(b, 0.16, 0.06, 'square');
+    // Sparse high drip-plinks, E minor pentatonic.
+    if (s % 4 === 3) {
+      const plink = [659.25, 783.99, 880.0, 987.77, 1046.5, 987.77, 880.0, 783.99];
+      const p = plink[(s >> 2) % 8];
+      if (p !== undefined) this.mtone(p, 0.3, 0.035, 'sine');
+    }
+    // Faint pick-scratches for texture, every bar.
+    if (s % 16 === 8) {
+      this.burst({ dur: 0.07, freq: 3200, q: 2.5, vol: 0.03 });
+    }
+  }
+
   // ── continuous loops ──────────────────────────────────────
   private makeLoop(filters: { type: BiquadFilterType; freq: number; q: number }[]): Loop | undefined {
     if (!this.ctx || !this.noise || !this.master) return undefined;
