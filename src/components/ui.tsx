@@ -124,51 +124,81 @@ export function EarAvatar({ ear, size = 64, locked }: { ear: EarId; size?: numbe
 
 export function HeroCanal() {
   return (
-    <svg viewBox="0 0 640 170" className="h-auto w-full drop-shadow-[0_10px_24px_rgba(0,0,0,0.5)]">
+    <svg viewBox="0 0 640 170" className="h-auto w-full drop-shadow-[0_10px_24px_rgba(244,114,182,0.3)]">
       <defs>
         <linearGradient id="hc-canal" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#6d1f2f" />
-          <stop offset="0.5" stopColor="#f2a59d" />
-          <stop offset="1" stopColor="#6d1f2f" />
+          <stop offset="0" stopColor="#f472b6" />
+          <stop offset="0.3" stopColor="#fbcfe8" />
+          <stop offset="0.5" stopColor="#fff1f2" />
+          <stop offset="0.7" stopColor="#fbcfe8" />
+          <stop offset="1" stopColor="#f472b6" />
         </linearGradient>
-        <radialGradient id="hc-wax" cx="0.35" cy="0.3" r="0.8">
-          <stop offset="0" stopColor="#fff0a0" />
-          <stop offset="1" stopColor="#c98a1c" />
+        <radialGradient id="hc-wax" cx="0.35" cy="0.3" r="0.75">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.8" />
+          <stop offset="0.2" stopColor="#fef08a" />
+          <stop offset="0.7" stopColor="#fbbf24" />
+          <stop offset="1" stopColor="#f59e0b" />
         </radialGradient>
         <clipPath id="hc-clip">
           <rect width="640" height="170" rx="26" />
         </clipPath>
       </defs>
       <g clipPath="url(#hc-clip)">
-        <rect width="640" height="170" fill="#7c4230" />
-        <circle cx="90" cy="30" r="60" fill="#8f5238" opacity="0.5" />
-        <circle cx="500" cy="150" r="80" fill="#8f5238" opacity="0.45" />
+        {/* Soft Peach Skin Background */}
+        <rect width="640" height="170" fill="#ffdfba" />
+        <circle cx="90" cy="30" r="60" fill="#fed7aa" opacity="0.6" />
+        <circle cx="500" cy="150" r="80" fill="#fed7aa" opacity="0.6" />
+        
+        {/* Candy Pink Jelly Tunnel */}
         <path
           d="M-10 26 C 110 12, 200 44, 320 52 S 520 30, 606 46 L 606 126 C 520 142, 420 122, 320 124 S 110 162, -10 148 Z"
           fill="url(#hc-canal)"
-          stroke="#4b1420"
-          strokeWidth="5"
+          stroke="#fb7185"
+          strokeWidth="6"
         />
-        <ellipse cx="606" cy="86" rx="13" ry="42" fill="#f0dcd6" stroke="#a46f6b" strokeWidth="3" />
-        <line x1="602" y1="62" x2="601" y2="92" stroke="#c7a29a" strokeWidth="5" strokeLinecap="round" />
-        {/* wax lumps */}
-        <ellipse cx="236" cy="118" rx="19" ry="16" fill="url(#hc-wax)" stroke="#8a5a0c" strokeWidth="2" />
-        <ellipse cx="380" cy="56" rx="15" ry="13" fill="url(#hc-wax)" stroke="#8a5a0c" strokeWidth="2" />
-        <ellipse cx="470" cy="112" rx="22" ry="17" fill="url(#hc-wax)" stroke="#8a5a0c" strokeWidth="2" />
-        <ellipse cx="540" cy="60" rx="13" ry="11" fill="#ffd23f" stroke="#a87400" strokeWidth="2" />
-        <path d="M545 55l2 -5 2 5 5 2 -5 2 -2 5 -2 -5 -5 -2z" fill="#fff" />
-        {/* hairs */}
-        <path d="M300 56 q 6 22 -4 34" stroke="#3b2418" strokeWidth="3" fill="none" strokeLinecap="round" />
-        <path d="M312 56 q 10 16 4 28" stroke="#3b2418" strokeWidth="3" fill="none" strokeLinecap="round" />
-        <path d="M420 120 q -8 -20 2 -32" stroke="#3b2418" strokeWidth="3" fill="none" strokeLinecap="round" />
-        {/* swab */}
+        
+        {/* Clean Shampoo Bubbles in Tunnel */}
+        <circle cx="160" cy="85" r="9" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.6" />
+        <circle cx="163" cy="82" r="3" fill="#ffffff" opacity="0.7" />
+        <circle cx="280" cy="70" r="14" fill="none" stroke="#ffffff" strokeWidth="2.5" opacity="0.5" />
+        <circle cx="284" cy="65" r="4" fill="#ffffff" opacity="0.8" />
+        <circle cx="360" cy="98" r="11" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.6" />
+        <circle cx="430" cy="68" r="8" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.5" />
+
+        {/* Jelly Eardrum with Neon Cyan Elastic Ring */}
+        <ellipse cx="606" cy="86" rx="14" ry="42" fill="#fb7185" stroke="#38bdf8" strokeWidth="4" />
+        <ellipse cx="604" cy="86" rx="9" ry="34" fill="#f43f5e" opacity="0.7" />
+        <line x1="602" y1="62" x2="601" y2="92" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
+        
+        {/* Golden Honey Jelly Wax Lumps with Pure White Glare */}
+        <ellipse cx="236" cy="118" rx="20" ry="17" fill="url(#hc-wax)" stroke="#d97706" strokeWidth="2.5" />
+        <ellipse cx="232" cy="113" rx="7" ry="5" fill="#ffffff" opacity="0.9" />
+
+        <ellipse cx="380" cy="56" rx="16" ry="14" fill="url(#hc-wax)" stroke="#d97706" strokeWidth="2.5" />
+        <ellipse cx="376" cy="52" rx="5" ry="4" fill="#ffffff" opacity="0.9" />
+
+        <ellipse cx="470" cy="112" rx="23" ry="18" fill="url(#hc-wax)" stroke="#d97706" strokeWidth="2.5" />
+        <ellipse cx="465" cy="107" rx="8" ry="6" fill="#ffffff" opacity="0.9" />
+
+        <ellipse cx="540" cy="60" rx="14" ry="12" fill="url(#hc-wax)" stroke="#d97706" strokeWidth="2" />
+        <ellipse cx="537" cy="57" rx="4" ry="3" fill="#ffffff" opacity="0.9" />
+        <path d="M545 55l2 -5 2 5 5 2 -5 2 -2 5 -2 -5 -5 -2z" fill="#ffffff" />
+        
+        {/* Cute Soft Curls */}
+        <path d="M300 56 q 6 18 -4 28" stroke="#f59e0b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
+        <path d="M420 120 q -8 -16 2 -26" stroke="#f59e0b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
+        
+        {/* Mint Candy Swab with Soft White Cloud Tip */}
         <g className="hero-swab">
-          <line x1="-150" y1="92" x2="100" y2="88" stroke="#5f4d31" strokeWidth="11" strokeLinecap="round" />
-          <line x1="-150" y1="92" x2="100" y2="88" stroke="#f5ecd8" strokeWidth="7" strokeLinecap="round" />
-          <circle cx="112" cy="88" r="17" fill="#d9d3c8" />
-          <circle cx="107" cy="82" r="12" fill="#fff" />
-          <circle cx="107" cy="95" r="12" fill="#fff" />
-          <circle cx="118" cy="88" r="12" fill="#fff" />
+          <line x1="-150" y1="92" x2="100" y2="88" stroke="#38bdf8" strokeWidth="12" strokeLinecap="round" />
+          <line x1="-150" y1="90" x2="100" y2="86" stroke="#bae6fd" strokeWidth="4" strokeLinecap="round" />
+          {/* Cloud cotton puffs */}
+          <circle cx="112" cy="88" r="18" fill="#fbcfe8" opacity="0.7" />
+          <circle cx="112" cy="88" r="16" fill="#ffffff" />
+          <circle cx="104" cy="81" r="12" fill="#ffffff" />
+          <circle cx="104" cy="95" r="12" fill="#ffffff" />
+          <circle cx="120" cy="88" r="13" fill="#ffffff" />
+          <circle cx="116" cy="84" r="5" fill="#f0fdf4" opacity="0.8" />
         </g>
       </g>
     </svg>

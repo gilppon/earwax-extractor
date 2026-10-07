@@ -53,14 +53,14 @@ export const EARS: Record<EarId, EarDef> = {
     hairMult: 1,
     wobble: 1,
     palette: {
-      skin: 0xc98462,
-      skinDark: 0x8f5238,
-      wall: 0x8a2c3c,
-      inner: 0xf2a29a,
-      wax: 0xe8b53a,
-      waxDark: 0xa06a14,
-      waxLight: 0xffe58a,
-      hair: 0x3b2418,
+      skin: 0xffdfba,      // 뽀얗고 포근한 복숭아 살구 스킨
+      skinDark: 0xf5b895,  // 따뜻한 피치 로즈 쉐도우
+      wall: 0xf472b6,      // 사랑스러운 스트로베리 핑크 젤리 벽
+      inner: 0xfff1f2,     // 부드러운 화이트 핑크 이너 젤리
+      wax: 0xfbbf24,       // 반짝이는 황금빛 허니 골드
+      waxDark: 0xd97706,   // 캐러멜 앰버 브라운
+      waxLight: 0xfef08a,  // 눈부신 레몬 허니 옐로우
+      hair: 0x92400e,      // 따뜻한 밀크초콜릿 브라운
     },
   },
   ALIEN: {
@@ -78,14 +78,14 @@ export const EARS: Record<EarId, EarDef> = {
     hairMult: 0.6,
     wobble: 1.2,
     palette: {
-      skin: 0x62b58a,
-      skinDark: 0x2f6f55,
-      wall: 0x1c5a68,
-      inner: 0xa8f0d0,
-      wax: 0x86ff5c,
-      waxDark: 0x2c9a3c,
-      waxLight: 0xe0ffb8,
-      hair: 0x114a3a,
+      skin: 0x6ee7b7,      // 민트 에메랄드 스킨
+      skinDark: 0x34d399,  // 딥 민트
+      wall: 0x06b6d4,      // 영롱한 사이언 오로라 벽
+      inner: 0xecfeff,     // 아이스 민트
+      wax: 0xa3e635,      // 형광 네온 라임 젤리
+      waxDark: 0x65a30d,  // 딥 라임
+      waxLight: 0xfacc15, // 레몬 옐로우 글로우
+      hair: 0x047857,     // 딥 에메랄드
     },
   },
   CAT: {
@@ -103,14 +103,14 @@ export const EARS: Record<EarId, EarDef> = {
     hairMult: 2.4,
     wobble: 1.6,
     palette: {
-      skin: 0xf0b078,
-      skinDark: 0xb87a45,
-      wall: 0xb0506a,
-      inner: 0xffc6c2,
-      wax: 0xf5dca6,
-      waxDark: 0xc39a55,
-      waxLight: 0xfff6dc,
-      hair: 0xd9791f,
+      skin: 0xfed7aa,      // 치즈냥이 웜 피치
+      skinDark: 0xfb923c,  // 치즈 오렌지
+      wall: 0xfb7185,      // 핑크 젤리 발바닥 핑크
+      inner: 0xfff1f2,     // 뽀송뽀송 베이비 핑크
+      wax: 0xfcd34d,      // 달콤한 버터 캔디 옐로우
+      waxDark: 0xb45309,  // 토피 브라운
+      waxLight: 0xfef9c3, // 화이트 버터
+      hair: 0xea580c,     // 오렌지 냥이 털
     },
   },
   GIANT: {
@@ -128,14 +128,14 @@ export const EARS: Record<EarId, EarDef> = {
     hairMult: 1.2,
     wobble: 0.9,
     palette: {
-      skin: 0xa88f78,
-      skinDark: 0x6a5546,
-      wall: 0x6a2f34,
-      inner: 0xd98f80,
-      wax: 0xb87a2e,
-      waxDark: 0x6d4210,
-      waxLight: 0xe6b866,
-      hair: 0x2a2a2a,
+      skin: 0xd6d3d1,      // 부드러운 스톤 그레이
+      skinDark: 0xa8a29e,  // 웜 토프
+      wall: 0x8b5cf6,      // 신비로운 퍼플 크리스탈 벽
+      inner: 0xf5f3ff,     // 라벤더 펄
+      wax: 0xf59e0b,      // 거대 황금 호박 보석
+      waxDark: 0xb45309,  // 다크 앰버
+      waxLight: 0xfde68a, // 골드 샴페인
+      hair: 0x44403c,     // 흑요석 스톤
     },
   },
 };

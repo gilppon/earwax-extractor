@@ -363,27 +363,32 @@ export class SwabController {
       case 'COTTON': {
         const sx = x - ux * R * 0.5;
         const sy = y - uy * R * 0.5;
-        g.lineStyle(10, 0x5f4d31, 1);
+        // 화사한 파스텔 민트 캔디 스틱 손잡이
+        g.lineStyle(10, 0x0284c7, 1);
         g.lineBetween(ax, ay, sx, sy);
-        g.lineStyle(7, 0xf5ecd8, 1);
+        g.lineStyle(6.5, 0x38bdf8, 1);
         g.lineBetween(ax, ay, sx, sy);
-        g.lineStyle(2, 0xffffff, 0.8);
+        g.lineStyle(2, 0xffffff, 0.9);
         g.lineBetween(ax + nx * 1.6, ay + ny * 1.6, sx + nx * 1.6, sy + ny * 1.6);
-        const sq = this.grabbing ? 0.93 : 1;
-        g.fillStyle(0xd9d3c8, 1);
-        g.fillCircle(x, y, R * sq);
+
+        const sq = this.grabbing ? 0.94 : 1;
+        // 뽀송뽀송 마시멜로 솜사탕 구름 팁 (순백색 + 부드러운 핑크빛 입체감)
+        g.fillStyle(0xfce7f3, 1);
+        g.fillCircle(x, y, R * sq * 1.08);
         g.fillStyle(0xffffff, 1);
-        g.fillCircle(x + nx * R * 0.32, y + ny * R * 0.32, R * 0.72 * sq);
-        g.fillCircle(x - nx * R * 0.32, y - ny * R * 0.32, R * 0.72 * sq);
-        g.fillCircle(x + ux * R * 0.15, y + uy * R * 0.15, R * 0.68 * sq);
-        g.fillStyle(0xf1eee8, 0.9);
-        g.fillCircle(x - ux * R * 0.35 - nx * R * 0.1, y - uy * R * 0.35 - ny * R * 0.1, R * 0.35);
-        g.lineStyle(1.5, 0xb3ac9f, 0.9);
-        g.strokeCircle(x, y, R * sq);
+        g.fillCircle(x, y, R * sq);
+        g.fillCircle(x + nx * R * 0.35, y + ny * R * 0.35, R * 0.75 * sq);
+        g.fillCircle(x - nx * R * 0.35, y - ny * R * 0.35, R * 0.75 * sq);
+        g.fillCircle(x + ux * R * 0.18, y + uy * R * 0.18, R * 0.7 * sq);
+        g.fillCircle(x - ux * R * 0.35, y - uy * R * 0.35, R * 0.45);
+        g.lineStyle(2, 0xf472b6, 0.85);
+        g.strokeCircle(x, y, R * sq * 1.05);
+
         if (this.holds.length) {
-          g.fillStyle(0xd9a441, 0.55);
-          g.fillCircle(x + ux * R * 0.5, y + uy * R * 0.5, R * 0.42);
-          g.fillCircle(x + nx * R * 0.4, y + ny * R * 0.4, R * 0.28);
+          // 달콤한 황금 꿀 묻어남 연출
+          g.fillStyle(0xfbbf24, 0.8);
+          g.fillCircle(x + ux * R * 0.5, y + uy * R * 0.5, R * 0.48);
+          g.fillCircle(x + nx * R * 0.4, y + ny * R * 0.4, R * 0.32);
         }
         break;
       }

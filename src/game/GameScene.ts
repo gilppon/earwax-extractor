@@ -170,6 +170,7 @@ export class GameScene extends Phaser.Scene {
     this.matter.world.setGravity(0, this.gm, 0.001);
 
     this.drawBackground();
+    this.createPatientAvatar();
     buildWalls(this, this.canal);
     buildDrum(this);
 
@@ -287,20 +288,27 @@ export class GameScene extends Phaser.Scene {
     this.touchBreath = breath;
   }
 
-  // ═════════════════════════════ background ═════════════════════════════
+  // ═════════════════════════════ background (포키 팝 ASMR 젤리 클리닉) ═════════════════════════════
   private drawBackground() {
     const p = this.ear.palette;
     const g = this.add.graphics().setDepth(0);
+    
+    // 1. 포근하고 화사한 캔디 파스텔 그라데이션 베이스
     g.fillStyle(p.skinDark, 1);
     g.fillRect(0, 0, W, H);
-    const rand = mulberry(7);
-    for (let i = 0; i < 90; i++) {
-      g.fillStyle(i % 3 === 0 ? p.skin : shade(p.skinDark, 0.82), 0.1 + rand() * 0.12);
-      g.fillCircle(rand() * W, rand() * H, 14 + rand() * 54);
-    }
-    for (let i = 0; i < 140; i++) {
-      g.fillStyle(shade(p.skinDark, 0.7), 0.35);
-      g.fillCircle(rand() * W, rand() * H, 1 + rand() * 1.6);
+    
+    // 2. 뽀송뽀송 샴푸/에어 버블 & 반짝이 파티클 (징그러운 모공 점 완전 제거!)
+    const rand = mulberry(12);
+    for (let i = 0; i < 45; i++) {
+      const bx = rand() * W;
+      const by = rand() * H;
+      const br = 12 + rand() * 42;
+      g.fillStyle(0xffffff, 0.08 + rand() * 0.12);
+      g.fillCircle(bx, by, br);
+      g.lineStyle(1.8, 0xffffff, 0.2 + rand() * 0.2);
+      g.strokeCircle(bx, by, br);
+      g.fillStyle(0xffffff, 0.35);
+      g.fillCircle(bx - br * 0.35, by - br * 0.35, br * 0.18);
     }
 
     const xs: number[] = [];
@@ -315,33 +323,35 @@ export class GameScene extends Phaser.Scene {
       }
       return pts;
     };
-    g.fillStyle(shade(p.wall, 0.5), 1);
-    g.fillPoints(poly(1.12), true, true);
-    const N = 9;
+
+    // 3. 쫀득한 젤리 외이도 터널 (부드러운 스트로베리 핑크 쉐이딩)
+    g.fillStyle(shade(p.wall, 0.8), 1);
+    g.fillPoints(poly(1.10), true, true);
+    
+    const N = 8;
     for (let i = 0; i < N; i++) {
-      const k = 1.04 - i * (0.9 / N);
+      const k = 1.03 - i * (0.86 / N);
       g.fillStyle(lerpColor(p.wall, p.inner, i / (N - 1)), 1);
       g.fillPoints(poly(k), true, true);
     }
 
-    // veins
-    for (let i = 0; i < 18; i++) {
-      const side = rand() < 0.5 ? -1 : 1;
-      const x = 90 + rand() * 740;
-      let px = x;
-      let py = side < 0 ? this.canal.top(x) : this.canal.bottom(x);
-      const pts = [];
-      for (let s = 0; s < 5; s++) {
-        pts.push({ x: px, y: py });
-        px += (rand() - 0.5) * 34;
-        py -= side * (7 + rand() * 13);
-      }
-      g.lineStyle(1.6, shade(p.wall, 1.2), 0.42);
-      g.strokePoints(pts, false, false);
+    // 4. 젤리 림 하이라이트 윤곽선 (징그러운 핏줄 대신 맑은 젤리 광택 라인)
+    g.lineStyle(3.5, 0xffffff, 0.55);
+    const topPts = xs.map(x => ({ x, y: this.canal.top(x) + 2 }));
+    const btmPts = xs.map(x => ({ x, y: this.canal.bottom(x) - 2 }));
+    g.strokePoints(topPts, false, false);
+    g.strokePoints(btmPts, false, false);
+
+    // 은은한 별빛 스파클
+    for (let i = 0; i < 12; i++) {
+      const sx = 120 + rand() * 680;
+      const sy = this.canal.center(sx) + (rand() - 0.5) * this.canal.halfH(sx) * 1.2;
+      g.fillStyle(0xffffff, 0.6);
+      g.fillCircle(sx, sy, 2 + rand() * 2);
     }
 
-    // exit line
-    g.lineStyle(2, 0xffffff, 0.22);
+    // 5. 깔끔한 EXIT 점선 가이드
+    g.lineStyle(2.5, 0x38bdf8, 0.65);
     const y0 = this.canal.top(EXIT_X);
     const y1 = this.canal.bottom(EXIT_X);
     for (let y = y0; y < y1; y += 14) g.lineBetween(EXIT_X, y, EXIT_X, Math.min(y + 7, y1));
@@ -806,6 +816,10 @@ export class GameScene extends Phaser.Scene {
     if (via === 'vacuum') this.synth.squish();
 
     const wasFrag = c.kind === 'FRAG';
+    const compliments = ['POP! 🧼', 'SO CLEAN! ✨', 'HEAVEN! 🍯', 'SATISFYING! 💖', 'DELICIOUS! 🫧'];
+    const cheer = compliments[Math.floor(Math.random() * compliments.length)];
+    this.floatText(x, y - 36, cheer, '#38bdf8');
+    this.triggerPatientPleasure();
     this.removeChunk(c);
 
     if (this.run.mode === 'STAGE') {
@@ -837,6 +851,7 @@ export class GameScene extends Phaser.Scene {
     if (this.st.hitCd > 0 || this.over) return;
     const dmg = base * this.sensMult;
     this.st.hp -= dmg;
+    this.triggerPatientHurt();
     this.st.minHp = Math.min(this.st.minHp, this.st.hp);
     this.st.hitCd = 0.3;
     this.st.combo = 0;
@@ -1285,31 +1300,38 @@ export class GameScene extends Phaser.Scene {
     const hpFrac = clamp(this.st.hp / 100, 0, 1);
     const w = bulge * 2 + 10;
 
+    // 위험 경고 오로라 글로우
     if (this.danger > 0.02 || this.hitFlashV > 0) {
-      const a = 0.06 + 0.16 * this.danger * (0.7 + 0.3 * Math.sin(this.animT * 9)) + this.hitFlashV * 0.25;
-      g.fillStyle(0xff2b2b, a);
-      g.fillEllipse(cx - 8, cy, 120, hh * 2 + 60);
+      const a = 0.08 + 0.22 * this.danger * (0.7 + 0.3 * Math.sin(this.animT * 9)) + this.hitFlashV * 0.35;
+      g.fillStyle(0xef4444, a);
+      g.fillEllipse(cx - 8, cy, 130, hh * 2 + 65);
     }
-    g.fillStyle(0xd9bfb9, 1);
+
+    // 💖 뽀송뽀송 캔디 핑크 젤리 고막 (포키 스타일)
+    g.fillStyle(0xfb7185, 1);
     g.fillEllipse(cx + 2, cy, w, hh * 2);
-    g.fillStyle(0xf3e6e1, 0.95);
-    g.fillEllipse(cx, cy - hh * 0.05, w * 0.8, hh * 1.75);
-    g.fillStyle(0xfff7f2, 0.6);
-    g.fillEllipse(cx - 2, cy - hh * 0.28, w * 0.5, hh * 0.8);
-    g.lineStyle(7, 0xc7a29a, 0.9);
-    g.lineBetween(cx - 3, cy - hh * 0.62, cx - 4, cy + hh * 0.12);
-    g.lineStyle(3, 0xe8d3cd, 0.9);
-    g.lineBetween(cx - 3, cy - hh * 0.62, cx - 4, cy + hh * 0.12);
-    g.fillStyle(0xb98c84, 1);
-    g.fillCircle(cx - 4, cy + hh * 0.12, 4);
-    g.lineStyle(3, 0x9c6a67, 0.9);
+
+    g.fillStyle(0xf472b6, 0.95);
+    g.fillEllipse(cx, cy - hh * 0.04, w * 0.85, hh * 1.8);
+
+    // 반투명 젤리 광택 층
+    g.fillStyle(0xfff1f2, 0.85);
+    g.fillEllipse(cx - 3, cy - hh * 0.22, w * 0.55, hh * 0.85);
+
+    // 영롱한 사이언/오로라 탄력 링
+    g.lineStyle(4, 0x38bdf8, 0.85);
     g.strokeEllipse(cx + 2, cy, w, hh * 2);
+    
+    // 별빛 십자 반사광
+    g.fillStyle(0xffffff, 0.95);
+    g.fillCircle(cx - 2, cy - hh * 0.22, 5);
+
     if (hpFrac < 1) {
-      g.fillStyle(0xd32f2f, (1 - hpFrac) * 0.45);
+      g.fillStyle(0xf43f5e, (1 - hpFrac) * 0.5);
       g.fillEllipse(cx + 2, cy, w, hh * 2);
     }
     if (hpFrac < 0.45) {
-      g.lineStyle(2, 0x5c1a1a, 0.8);
+      g.lineStyle(2.5, 0x9f1239, 0.85);
       g.lineBetween(cx - 4, cy - hh * 0.4, cx + 4, cy - hh * 0.1);
       g.lineBetween(cx + 4, cy - hh * 0.1, cx - 3, cy + hh * 0.3);
       if (hpFrac < 0.25) g.lineBetween(cx - 3, cy + hh * 0.3, cx + 3, cy + hh * 0.6);
@@ -1317,6 +1339,66 @@ export class GameScene extends Phaser.Scene {
   }
 
   // ═════════════════════════════ hud ═════════════════════════════
+  // ═════════════════════════════ 환자 ASMR 리액션 아바타 시스템 ═════════════════════════════
+  private patientMoodText!: Phaser.GameObjects.Text;
+  private patientAvatarContainer!: Phaser.GameObjects.Container;
+
+  private createPatientAvatar() {
+    const c = this.add.container(78, 48).setDepth(15);
+    const bg = this.add.graphics();
+    bg.fillStyle(0xffffff, 0.92);
+    bg.fillRoundedRect(-52, -22, 104, 44, 22);
+    bg.lineStyle(2.5, 0xf472b6, 0.9);
+    bg.strokeRoundedRect(-52, -22, 104, 44, 22);
+
+    const emoji = this.add.text(-36, -14, this.ear.emoji, { fontSize: '20px' });
+    this.patientMoodText = this.add.text(-8, -12, '( ˘▽˘ )', {
+      fontSize: '14px',
+      color: '#db2777',
+      fontStyle: 'bold',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+    });
+
+    c.add([bg, emoji, this.patientMoodText]);
+    this.patientAvatarContainer = c;
+  }
+
+  private triggerPatientPleasure() {
+    if (!this.patientMoodText || !this.patientAvatarContainer) return;
+    const faces = ['( ✪ω✪ )✨', '( ˘ ³˘)♥', '(*^▽^*)🍯', '( ≧ᗜ≦ )🎉'];
+    this.patientMoodText.setText(faces[Math.floor(Math.random() * faces.length)]);
+    this.tweens.add({
+      targets: this.patientAvatarContainer,
+      scaleX: 1.22,
+      scaleY: 1.22,
+      duration: 120,
+      yoyo: true,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.time.delayedCall(1600, () => {
+          if (this.patientMoodText) this.patientMoodText.setText('( ˘▽˘ )');
+        });
+      },
+    });
+  }
+
+  private triggerPatientHurt() {
+    if (!this.patientMoodText || !this.patientAvatarContainer) return;
+    this.patientMoodText.setText('( > <; )!');
+    this.tweens.add({
+      targets: this.patientAvatarContainer,
+      x: '+=6',
+      duration: 50,
+      yoyo: true,
+      repeat: 3,
+      onComplete: () => {
+        this.time.delayedCall(1200, () => {
+          if (this.patientMoodText) this.patientMoodText.setText('( ˘▽˘ )');
+        });
+      },
+    });
+  }
+
   private emitHud() {
     const sw = this.swab;
     const st = this.st;

@@ -81,12 +81,12 @@ export function MissionTab({ onStart, goTab }: Props) {
           <HeroCanal />
         </div>
         <div className="mt-3 text-center">
-          <div className="text-xs tracking-[0.35em] text-rose-300/80">EXTREME EARWAX MINER</div>
-          <h1 className="mt-1 bg-gradient-to-b from-amber-200 to-amber-400 bg-clip-text text-3xl font-bold text-transparent sm:text-5xl">
-            Hellish Earwax Sniper
+          <div className="text-xs font-semibold tracking-[0.35em] text-pink-300">SATISFYING CLEANING ASMR</div>
+          <h1 className="mt-1 bg-gradient-to-r from-amber-200 via-pink-200 to-amber-300 bg-clip-text text-3xl font-extrabold text-transparent sm:text-5xl">
+            Earwax Extractor 🧼
           </h1>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-white/70 sm:text-base">
-            Dig out the wax without touching the eardrum — with a hand that won't stop shaking. Put on earphones for maximum ASMR 🎧
+          <p className="mx-auto mt-2 max-w-xl text-sm text-pink-100/80 sm:text-base">
+            Carefully pop out glowing jelly wax without bumping the sensitive eardrum. Plug in headphones for sweet ASMR sensations! 🎧✨
           </p>
         </div>
       </div>

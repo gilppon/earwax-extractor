@@ -64,25 +64,27 @@ function drawBlob(
   g.fillPoints(scalePts(pts, c, 0.56, -size * 0.07, -size * 0.09), true, true);
   g.fillStyle(0xffffff, 0.55);
   g.fillEllipse(c - size * 0.13, c - size * 0.17, size * 0.13, size * 0.07);
-  for (let i = 0; i < 8; i++) {
-    const a = rand() * Math.PI * 2;
-    const d = rand() * R * 0.7;
-    g.fillStyle(cols.dark, 0.35);
-    g.fillCircle(c + Math.cos(a) * d, c + Math.sin(a) * d, size * (0.012 + rand() * 0.02));
-  }
+  // 부드러운 젤리 볼륨 & 반짝이는 하이라이트
+  g.fillStyle(0xffffff, 0.85);
+  g.fillEllipse(c - size * 0.14, c - size * 0.16, size * 0.16, size * 0.08);
+  g.fillCircle(c - size * 0.22, c - size * 0.09, size * 0.035);
+
+  // 쫀득한 젤리 투과 림라이트
+  g.fillStyle(cols.light, 0.5);
+  g.fillEllipse(c + size * 0.12, c + size * 0.14, size * 0.24, size * 0.09);
+
   if (glossySurface) {
-    // Small deterministic flecks add a soft, wet sheen without changing the silhouette.
-    for (let i = 0; i < 4; i++) {
-      const x = c + (rand() - 0.5) * size * 0.42;
-      const y = c + (rand() - 0.62) * size * 0.38;
-      const w = size * (0.035 + rand() * 0.025);
-      g.fillStyle(cols.light, 0.45);
-      g.fillEllipse(x, y, w, w * 0.34);
-      g.fillStyle(0xffffff, 0.45);
-      g.fillEllipse(x - w * 0.12, y - w * 0.12, w * 0.34, w * 0.12);
+    // 젤리 슬라임 특유의 찰랑이는 표면 광택 & 반짝이
+    for (let i = 0; i < 3; i++) {
+      const x = c + (rand() - 0.5) * size * 0.45;
+      const y = c + (rand() - 0.55) * size * 0.4;
+      const w = size * (0.04 + rand() * 0.03);
+      g.fillStyle(0xffffff, 0.6);
+      g.fillEllipse(x, y, w, w * 0.4);
     }
+    sparkle(g, c + size * 0.18, c - size * 0.18, size * 0.06);
   }
-  g.lineStyle(Math.max(2, size * 0.022), shade(cols.dark, 0.55), 0.9);
+  g.lineStyle(Math.max(2.5, size * 0.024), shade(cols.dark, 0.75), 0.95);
   g.strokePoints(scalePts(pts, c, 0.985, -0.5, -1), true, true);
 }
 
@@ -124,10 +126,10 @@ function crackLines(
       const a = a0 + (r() - 0.5) * 0.7;
       pts.push({ x: c + Math.cos(a) * rad, y: c + Math.sin(a) * rad });
     }
-    g.lineStyle(width + 2, 0x2c241a, 1);
+    g.lineStyle(width + 2, 0x451a03, 1);
     g.strokePoints(pts, false, false);
     if (glow) {
-      g.lineStyle(Math.max(1, width - 1), 0xffb74d, 0.95);
+      g.lineStyle(Math.max(1, width - 1), 0xfef08a, 0.95);
       g.strokePoints(pts, false, false);
     }
   }
@@ -145,46 +147,50 @@ export function buildTextures(scene: Phaser.Scene, pal: EarPalette) {
   const S = 128;
   const waxCols: Cols = { base: pal.wax, dark: pal.waxDark, light: pal.waxLight };
   [11, 23, 37, 59].forEach((seed, i) => {
-    gen(scene, `wax_${i}`, S, (g) => drawBlob(g, S, waxCols, seed, 16, 0.84, true));
+    gen(scene, `wax_${i}`, S, (g) => drawBlob(g, S, waxCols, seed, 16, 0.88, true));
   });
 
   gen(scene, 'wax_gold', S, (g) => {
-    drawBlob(g, S, { base: 0xffd23f, dark: 0xb87d00, light: 0xfff3a6 }, 77, 14, 0.9);
-    sparkle(g, S * 0.68, S * 0.3, 9);
-    sparkle(g, S * 0.32, S * 0.62, 6);
-    sparkle(g, S * 0.62, S * 0.7, 5);
+    drawBlob(g, S, { base: 0xfacc15, dark: 0xb45309, light: 0xfef08a }, 77, 14, 0.92, true);
+    sparkle(g, S * 0.68, S * 0.28, 12);
+    sparkle(g, S * 0.28, S * 0.65, 8);
+    sparkle(g, S * 0.65, S * 0.72, 7);
   });
 
   gen(scene, 'wax_hard', S, (g) => {
-    drawBlob(g, S, { base: 0xb9ad98, dark: 0x6f6556, light: 0xe0d6c3 }, 91, 10, 0.72);
-    crackLines(g, S, 2, 5, 2, false);
+    drawBlob(g, S, { base: 0xf59e0b, dark: 0x9a3412, light: 0xfde68a }, 91, 12, 0.82, true);
+    sparkle(g, S * 0.65, S * 0.32, 9);
+    crackLines(g, S, 2, 5, 2, true);
   });
 
   gen(scene, 'wax_plug', S, (g) => {
-    drawBlob(g, S, waxCols, 137, 20, 0.68, true);
+    drawBlob(g, S, waxCols, 137, 20, 0.78, true);
     for (let i = 0; i < 3; i++) {
-      g.lineStyle(3, shade(pal.waxDark, 0.72), 0.55);
+      g.lineStyle(3, shade(pal.waxDark, 0.85), 0.65);
       g.beginPath();
       g.arc(S * 0.5, S * 0.52, S * (0.18 + i * 0.1), 0.25 + i * 0.32, 2.7 + i * 0.28, false);
       g.strokePath();
     }
+    sparkle(g, S * 0.72, S * 0.26, 11);
     crackLines(g, S, 3, 149, 2, false);
   });
 
   gen(scene, 'wax_frag', S, (g) => {
-    drawBlob(g, S, { base: 0xa89f8d, dark: 0x5f574a, light: 0xd6cdb8 }, 103, 9, 0.74);
+    drawBlob(g, S, { base: 0xfbbf24, dark: 0xb45309, light: 0xfef9c3 }, 103, 10, 0.84, true);
     crackLines(g, S, 1, 9, 2, true);
   });
 
   const BS = 192;
   for (let cr = 0; cr <= 3; cr++) {
     gen(scene, `boss${cr}`, BS, (g) => {
-      drawBlob(g, BS, { base: 0xb8ab90, dark: 0x6b6050, light: 0xded4bd }, 131, 15, 0.8);
-      // calcified strata rings
-      g.lineStyle(2, 0x8a7d66, 0.5);
+      // 영롱한 대왕 황금 너겟 보석 (Golden Amber Boulder)
+      drawBlob(g, BS, { base: 0xf59e0b, dark: 0x92400e, light: 0xfef3c7 }, 131, 18, 0.86, true);
+      g.lineStyle(2.5, 0xfde047, 0.6);
       for (let k = 1; k <= 3; k++) {
         g.strokeCircle(BS / 2 - 4, BS / 2 - 2, BS * (0.13 * k));
       }
+      sparkle(g, BS * 0.72, BS * 0.24, 16);
+      sparkle(g, BS * 0.26, BS * 0.70, 12);
       crackLines(g, BS, cr, 211, 4, cr > 0);
     });
   }
