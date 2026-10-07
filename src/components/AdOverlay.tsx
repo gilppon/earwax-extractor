@@ -40,7 +40,7 @@ export default function AdOverlay({ kind, onDone }: { kind: AdKind; onDone: (ok:
         }}
         className="mt-2 rounded-lg border border-white/30 px-4 py-2 text-sm text-white/70"
       >
-        Skip (forfeit reward)
+        {kind === 'rewarded' ? 'Skip (forfeit reward)' : 'Skip ad'}
       </button>
     </div>
   );

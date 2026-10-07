@@ -18,9 +18,14 @@ const lastSel: { mode: GameMode; stage: number } = { mode: 'STAGE', stage: 0 };
 function stageFeatures(n: number) {
   const p = stageParams(n);
   const f: string[] = [];
+  if (p.canalCurve > 1) f.push('🌀 Winding canal');
+  if (p.canalWidth < 1) f.push('🕳️ Narrow passage');
+  if (p.whisper > 0) f.push('🔊 Whispering wind');
+  if (p.corePulse) f.push('💓 Core pulse · loose wax surges to exit');
   if (p.hairs > 0) f.push(`🧶 Fur ${p.hairs}`);
   if (p.gold > 0) f.push('✨ Golden wax');
   if (p.hard > 0) f.push('🪨 Lime wax');
+  if (p.plugs > 0) f.push(`🪨 Large embedded plug ×${p.plugs}`);
   if (p.danger > 0) f.push('🎯 Drum-side wax');
   if (p.flinch > 0) f.push('🤧 Sneezing');
   if (p.sway > 0) f.push('🌪️ Gravity sway');
@@ -124,6 +129,15 @@ export function MissionTab({ onStart, goTab }: Props) {
       {mode === 'STAGE' && (
         <section>
           <SectionTitle sub={`${STAGE_NAMES[stage - 1]}`}>Select stage</SectionTitle>
+          <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 rounded-lg bg-white/[0.04] px-2 py-1.5 text-[11px] text-white/70">
+            <span>
+              <b className="text-emerald-200">🎯 Optional flawless:</b> no ear damage → +
+              {Math.round((25 + 15 * stage) * 0.5)} wax, +500 score
+            </span>
+            <span>
+              <b className="text-amber-200">⚡ Optional speed:</b> under {stageParams(stage).parTime}s → extra wax and score
+            </span>
+          </div>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
             {Array.from({ length: STAGE_COUNT }, (_, i) => i + 1).map((n) => {
               const unlocked = n <= save.stageCleared + 1;

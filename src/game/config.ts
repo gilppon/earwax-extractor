@@ -298,7 +298,7 @@ export const upgradeCost = (u: UpgradeDef, currentLevel: number) =>
   Math.round(u.base * Math.pow(u.growth, Math.max(0, currentLevel - u.start)));
 
 // ── Stages ──────────────────────────────────────────────────
-export const STAGE_COUNT = 8;
+export const STAGE_COUNT = 12;
 export const STAGE_NAMES = [
   'Entrance Cleanup',
   'Curvy Section',
@@ -308,31 +308,45 @@ export const STAGE_NAMES = [
   'Eardrum Cliff',
   'Gravity Storm',
   'Hellish Chasm',
+  'Plugged Passage',
+  'Whispering Furstorm',
+  'Resonant Drift',
+  'Tympanic Core',
 ];
 
 export interface StageParams {
   target: number;
+  canalCurve: number;
+  canalWidth: number;
   stuckRatio: number;
   hairs: number;
   gold: number;
   hard: number;
+  plugs: number;
   danger: number;
   flinch: number; // seconds between sneezes (0 = none)
   sway: number;
+  whisper: number;
+  corePulse: boolean;
   parTime: number;
 }
 
 export function stageParams(n: number): StageParams {
   return {
     target: 4 + n,
+    canalCurve: n === 2 ? 1.8 : 1,
+    canalWidth: n === 8 ? 0.9 : 1,
     stuckRatio: Math.min(0.85, 0.35 + 0.08 * n),
     hairs: n < 2 ? 0 : Math.min(8, n),
     gold: n >= 3 ? 1 + (n >= 6 ? 1 : 0) : 0,
     hard: n >= 4 ? (n >= 6 ? 2 : 1) : 0,
+    plugs: n === 9 || n === 11 ? 1 : n === 12 ? 2 : 0,
     danger: n >= 2 ? Math.min(3, 1 + Math.floor(n / 3)) : 0,
     flinch: n >= 5 ? 15 - (n - 5) * 1.6 : 0,
     sway: n >= 7 ? 0.22 + (n - 7) * 0.1 : 0,
-    parTime: 50 + n * 12,
+    whisper: n === 10 ? 0.6 : 0,
+    corePulse: n === 12,
+    parTime: n === 1 ? 90 : 50 + n * 12,
   };
 }
 

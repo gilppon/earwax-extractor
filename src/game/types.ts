@@ -51,15 +51,19 @@ export interface RunResult {
 
 export interface HudState {
   drumHp: number;
+  flawless: boolean;
   score: number;
   wax: number;
   extracted: number;
   target: number;
   combo: number;
   comboMult: number;
+  comboWindow: number; // 0..1, remaining time before combo resets
   breath: number; // 0..1
   breathLocked: boolean;
   energy: number; // 0..1  (vacuum)
+  grabbing: boolean; // whether a grab input is currently held
+  grabbed: boolean; // whether the tool is attached to a wax chunk
   tool: PlayTool;
   phase: string;
   clog: number; // 0..1  (endless)

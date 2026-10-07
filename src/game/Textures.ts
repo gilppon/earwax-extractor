@@ -48,6 +48,7 @@ function drawBlob(
   seed: number,
   n: number,
   minK: number,
+  glossySurface = false,
 ) {
   const c = size / 2;
   const R = size * 0.46;
@@ -68,6 +69,18 @@ function drawBlob(
     const d = rand() * R * 0.7;
     g.fillStyle(cols.dark, 0.35);
     g.fillCircle(c + Math.cos(a) * d, c + Math.sin(a) * d, size * (0.012 + rand() * 0.02));
+  }
+  if (glossySurface) {
+    // Small deterministic flecks add a soft, wet sheen without changing the silhouette.
+    for (let i = 0; i < 4; i++) {
+      const x = c + (rand() - 0.5) * size * 0.42;
+      const y = c + (rand() - 0.62) * size * 0.38;
+      const w = size * (0.035 + rand() * 0.025);
+      g.fillStyle(cols.light, 0.45);
+      g.fillEllipse(x, y, w, w * 0.34);
+      g.fillStyle(0xffffff, 0.45);
+      g.fillEllipse(x - w * 0.12, y - w * 0.12, w * 0.34, w * 0.12);
+    }
   }
   g.lineStyle(Math.max(2, size * 0.022), shade(cols.dark, 0.55), 0.9);
   g.strokePoints(scalePts(pts, c, 0.985, -0.5, -1), true, true);
@@ -132,7 +145,7 @@ export function buildTextures(scene: Phaser.Scene, pal: EarPalette) {
   const S = 128;
   const waxCols: Cols = { base: pal.wax, dark: pal.waxDark, light: pal.waxLight };
   [11, 23, 37, 59].forEach((seed, i) => {
-    gen(scene, `wax_${i}`, S, (g) => drawBlob(g, S, waxCols, seed, 16, 0.84));
+    gen(scene, `wax_${i}`, S, (g) => drawBlob(g, S, waxCols, seed, 16, 0.84, true));
   });
 
   gen(scene, 'wax_gold', S, (g) => {
@@ -145,6 +158,17 @@ export function buildTextures(scene: Phaser.Scene, pal: EarPalette) {
   gen(scene, 'wax_hard', S, (g) => {
     drawBlob(g, S, { base: 0xb9ad98, dark: 0x6f6556, light: 0xe0d6c3 }, 91, 10, 0.72);
     crackLines(g, S, 2, 5, 2, false);
+  });
+
+  gen(scene, 'wax_plug', S, (g) => {
+    drawBlob(g, S, waxCols, 137, 20, 0.68, true);
+    for (let i = 0; i < 3; i++) {
+      g.lineStyle(3, shade(pal.waxDark, 0.72), 0.55);
+      g.beginPath();
+      g.arc(S * 0.5, S * 0.52, S * (0.18 + i * 0.1), 0.25 + i * 0.32, 2.7 + i * 0.28, false);
+      g.strokePath();
+    }
+    crackLines(g, S, 3, 149, 2, false);
   });
 
   gen(scene, 'wax_frag', S, (g) => {

@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react';
 
 export type Tab = 'mission' | 'lab' | 'ears' | 'rank';
 
+function hasTouchInput() {
+  if (typeof window === 'undefined') return false;
+  return (
+    navigator.maxTouchPoints > 0 ||
+    window.matchMedia?.('(pointer: coarse)').matches === true ||
+    window.matchMedia?.('(any-pointer: coarse)').matches === true
+  );
+}
+
 export function useNow(ms = 1000) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -12,15 +21,14 @@ export function useNow(ms = 1000) {
 }
 
 export function useIsTouch() {
-  const [touch, setTouch] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches,
-  );
+  const [touch, setTouch] = useState(hasTouchInput);
   useEffect(() => {
-    const mq = window.matchMedia?.('(pointer: coarse)');
-    if (!mq) return;
-    const fn = () => setTouch(mq.matches);
-    mq.addEventListener('change', fn);
-    return () => mq.removeEventListener('change', fn);
+    const queries = ['(pointer: coarse)', '(any-pointer: coarse)']
+      .map((query) => window.matchMedia?.(query))
+      .filter((query): query is MediaQueryList => !!query);
+    const update = () => setTouch(hasTouchInput());
+    queries.forEach((query) => query.addEventListener('change', update));
+    return () => queries.forEach((query) => query.removeEventListener('change', update));
   }, []);
   return touch;
 }

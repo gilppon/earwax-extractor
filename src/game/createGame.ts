@@ -48,7 +48,13 @@ export function createGame(
     destroy: () => {
       synth.stopLoops();
       synth.setPaused(false); // never leave the AudioContext suspended
+      const renderer = game.renderer;
       game.destroy(true);
+      // Phaser defers full destruction until the next frame. Release the context
+      // now so a stage transition does not overlap old and new WebGL contexts.
+      if ('gl' in renderer) {
+        renderer.gl?.getExtension('WEBGL_lose_context')?.loseContext();
+      }
     },
     setLowFx: (v: boolean) => setSceneLowFx(v),
     pause: () => {

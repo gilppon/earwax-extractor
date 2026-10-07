@@ -47,13 +47,17 @@ export class Canal {
     [DRUM_X, 0],
   ];
 
-  constructor(private ear: EarDef) {}
+  constructor(
+    private ear: EarDef,
+    private curveMultiplier = 1,
+    private widthMultiplier = 1,
+  ) {}
 
   center(x: number) {
-    return H / 2 + interp(this.cen, x) * this.ear.curve;
+    return H / 2 + interp(this.cen, x) * this.ear.curve * this.curveMultiplier;
   }
   halfH(x: number) {
-    return this.ear.base * interp(this.half, x);
+    return this.ear.base * interp(this.half, x) * this.widthMultiplier;
   }
   top(x: number) {
     return this.center(x) - this.halfH(x);
@@ -109,13 +113,16 @@ export function buildDrum(scene: Phaser.Scene) {
 }
 
 // ── Earwax chunks ───────────────────────────────────────────
-export type ChunkKind = 'NORMAL' | 'GOLD' | 'HARD' | 'FRAG' | 'BOSS';
+export type ChunkKind = 'NORMAL' | 'GOLD' | 'HARD' | 'PLUG' | 'FRAG' | 'BOSS';
 
 export interface Chunk {
   id: number;
   body: MBody;
   img: Phaser.GameObjects.Image;
+  bonusTag?: Phaser.GameObjects.Text;
   r: number;
+  baseR: number;
+  sizeScale: number;
   kind: ChunkKind;
   hp: number;
   maxHp: number;
@@ -124,6 +131,7 @@ export interface Chunk {
   value: number;
   removed: boolean;
   danger: boolean;
+  optional: boolean;
 }
 
 let chunkSeq = 1;
@@ -137,6 +145,8 @@ export interface ChunkOpts {
   hpMul?: number;
   value: number;
   danger?: boolean;
+  optional?: boolean;
+  ignoreGravity?: boolean;
 }
 
 export function chunkTexture(kind: ChunkKind) {
@@ -145,6 +155,8 @@ export function chunkTexture(kind: ChunkKind) {
       return 'wax_gold';
     case 'HARD':
       return 'wax_hard';
+    case 'PLUG':
+      return 'wax_plug';
     case 'FRAG':
       return 'wax_frag';
     case 'BOSS':
@@ -155,8 +167,8 @@ export function chunkTexture(kind: ChunkKind) {
 }
 
 export function createChunk(scene: Phaser.Scene, o: ChunkOpts): Chunk {
-  const heavy = o.kind === 'HARD' || o.kind === 'FRAG' || o.kind === 'BOSS';
-  const sides = o.kind === 'BOSS' ? 11 : o.kind === 'HARD' || o.kind === 'FRAG' ? 8 : 7;
+  const heavy = o.kind === 'HARD' || o.kind === 'PLUG' || o.kind === 'FRAG' || o.kind === 'BOSS';
+  const sides = o.kind === 'BOSS' ? 11 : o.kind === 'PLUG' ? 12 : o.kind === 'HARD' || o.kind === 'FRAG' ? 8 : 7;
   const body = scene.matter.add.polygon(o.x, o.y, sides, o.r, {
     label: 'wax',
     friction: 0.85,
@@ -164,6 +176,7 @@ export function createChunk(scene: Phaser.Scene, o: ChunkOpts): Chunk {
     frictionAir: 0.028,
     restitution: 0.08,
     density: heavy ? 0.004 : 0.0018,
+    ignoreGravity: o.ignoreGravity ?? false,
     angle: Math.random() * Math.PI * 2,
   } as never) as MBody;
 
@@ -178,6 +191,8 @@ export function createChunk(scene: Phaser.Scene, o: ChunkOpts): Chunk {
     body,
     img,
     r: o.r,
+    baseR: o.r,
+    sizeScale: 1,
     kind: o.kind,
     hp,
     maxHp: hp,
@@ -186,6 +201,7 @@ export function createChunk(scene: Phaser.Scene, o: ChunkOpts): Chunk {
     value: o.value,
     removed: false,
     danger: !!o.danger,
+    optional: !!o.optional,
   };
   (body as unknown as { chunk: Chunk }).chunk = chunk;
   if (o.stuck) setStuck(scene, chunk, true);

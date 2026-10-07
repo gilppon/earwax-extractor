@@ -64,7 +64,7 @@ function mulberry(seed: number) {
   };
 }
 
-const KIND_MULT: Record<ChunkKind, number> = { NORMAL: 1, GOLD: 3, HARD: 2, FRAG: 6, BOSS: 0 };
+const KIND_MULT: Record<ChunkKind, number> = { NORMAL: 1, GOLD: 3, HARD: 2, PLUG: 2.8, FRAG: 6, BOSS: 0 };
 
 /** Low-spec mode: stop ambient particles + skip red flashes (set from GameHandle) */
 let lowFxMode = false;
@@ -80,6 +80,7 @@ export class GameScene extends Phaser.Scene {
   private swab!: SwabController;
   private env!: SwabEnv;
   private boss: Chunk | null = null;
+  private endlessGoldPending = false;
 
   private underG!: Phaser.GameObjects.Graphics;
   private hairG!: Phaser.GameObjects.Graphics;
@@ -94,6 +95,7 @@ export class GameScene extends Phaser.Scene {
   private keys: { space?: Phaser.Input.Keyboard.Key; shift?: Phaser.Input.Keyboard.Key } = {};
   private ptr = { x: 40, y: H / 2 };
   private touchGrab = false;
+  private canvasTouchGrab = false;
   private touchBreath = false;
 
   private over = false;
@@ -111,7 +113,11 @@ export class GameScene extends Phaser.Scene {
   private gravAngle = 0;
   private fragsLeft = 0;
   private danger = 0;
+  private corePulseTimer = 0;
+  private corePulseWarning = false;
+  private corePulseFx = 0;
   private hitFlashV = 0;
+  private wallScrapeFxT = 0;
   private hairTarget = 0;
   private clogNow = 0;
   private canalArea = 1;
@@ -151,7 +157,8 @@ export class GameScene extends Phaser.Scene {
       this.st.minHp = 130;
     }
     this.ear = EARS[this.run.ear];
-    this.canal = new Canal(this.ear);
+    const stageShape = this.run.mode === 'STAGE' ? stageParams(this.run.stage) : undefined;
+    this.canal = new Canal(this.ear, stageShape?.canalCurve ?? 1, stageShape?.canalWidth ?? 1);
     this.canalArea = this.canal.area();
     this.sensMult = damageMult(this.run.sensitivity);
     const pal = this.ear.palette;
@@ -252,7 +259,14 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       this.ptr.x = p.x;
       this.ptr.y = p.y;
+      if (p.wasTouch) this.canvasTouchGrab = true;
     });
+    const releaseCanvasTouch = (p: Phaser.Input.Pointer) => {
+      if (p.wasTouch) this.canvasTouchGrab = false;
+    };
+    this.input.on('pointerup', releaseCanvasTouch);
+    this.input.on('pointerupoutside', releaseCanvasTouch);
+    this.input.on('pointercancel', releaseCanvasTouch);
     if (this.input.keyboard) {
       this.keys.space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
       this.keys.shift = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
@@ -342,18 +356,26 @@ export class GameScene extends Phaser.Scene {
     danger?: boolean;
     hpMul?: number;
     grow?: boolean;
+    optional?: boolean;
+    preferTop?: boolean;
+    preferCenter?: boolean;
+    radiusMul?: number;
   }): Chunk | null {
     const cs = this.ear.chunkScale;
     for (let tries = 0; tries < 40; tries++) {
       const r =
-        (o.kind === 'GOLD' ? rnd(12, 16) : o.kind === 'HARD' ? rnd(16, 22) : rnd(13, 21)) * cs;
+        (o.kind === 'GOLD' ? rnd(12, 16) : o.kind === 'PLUG' ? rnd(36, 42) : o.kind === 'HARD' ? rnd(16, 22) : rnd(13, 21)) *
+        cs *
+        (o.radiusMul ?? 1);
       const x = rnd(o.xMin, o.xMax);
-      const side = Math.random() < 0.5 ? -1 : 1;
-      const y = o.stuck
-        ? side < 0
-          ? this.canal.top(x) + r * 0.72
-          : this.canal.bottom(x) - r * 0.72
-        : this.canal.bottom(x) - r - 3;
+      const side = o.preferTop ? -1 : Math.random() < 0.5 ? -1 : 1;
+      const y = o.preferCenter
+        ? this.canal.center(x)
+        : o.stuck
+          ? side < 0
+            ? this.canal.top(x) + r * 0.72
+            : this.canal.bottom(x) - r * 0.72
+          : this.canal.bottom(x) - r - 3;
       if (this.chunks.some((c) => Math.hypot(c.body.position.x - x, c.body.position.y - y) < c.r + r + 6)) continue;
       const zone = x > 700 ? 1.6 : 1;
       const value = Math.max(
@@ -366,15 +388,16 @@ export class GameScene extends Phaser.Scene {
         r,
         kind: o.kind,
         stuck: o.stuck,
-        hpMul: o.hpMul ?? (o.kind === 'HARD' ? 3 : o.kind === 'GOLD' ? 1.6 : 1),
+        hpMul: o.hpMul ?? (o.kind === 'PLUG' ? 4.8 : o.kind === 'HARD' ? 3 : o.kind === 'GOLD' ? 1.6 : 1),
         value,
         danger: !!o.danger || x > 720,
+        optional: o.optional,
       });
       this.chunks.push(c);
       if (o.grow) {
         const s = c.img.scaleX;
         this.tweens.add({ targets: c.img, scaleX: { from: s * 0.2, to: s }, scaleY: { from: s * 0.2, to: s }, duration: 480, ease: 'Back.Out' });
-        this.crumbs.emitParticleAt(x, y, 6);
+        this.crumbs.emitParticleAt(x, y, lowFxMode ? 2 : 6);
       }
       return c;
     }
@@ -384,23 +407,58 @@ export class GameScene extends Phaser.Scene {
   private initStage() {
     const sp = stageParams(this.run.stage);
     const kinds: ChunkKind[] = [];
+    if (this.run.stage === 1) kinds.push('PLUG');
+    for (let i = 0; i < sp.plugs; i++) kinds.push('PLUG');
     for (let i = 0; i < sp.gold; i++) kinds.push('GOLD');
     for (let i = 0; i < sp.hard; i++) kinds.push('HARD');
     while (kinds.length < sp.target) kinds.push('NORMAL');
     kinds.sort(() => Math.random() - 0.5);
+    if (this.run.stage === 1) {
+      const starterIndex = kinds.indexOf('NORMAL');
+      if (starterIndex > 0) kinds.unshift(kinds.splice(starterIndex, 1)[0]);
+    }
     let placed = 0;
+    let tutorialPickupPlaced = false;
     kinds.forEach((kind, i) => {
       const dangerous = i < sp.danger;
+      const plug = kind === 'PLUG';
+      const stageOnePlug = this.run.stage === 1 && plug;
       const stuck = kind !== 'NORMAL' ? true : Math.random() < sp.stuckRatio;
+      const tutorialPickup = this.run.stage === 1 && kind === 'NORMAL' && !tutorialPickupPlaced;
+      if (tutorialPickup) tutorialPickupPlaced = true;
       const c = this.tryPlace({
         kind,
-        stuck: dangerous ? true : stuck,
-        xMin: dangerous ? 725 : 170,
-        xMax: dangerous ? 805 : 700,
-        danger: dangerous,
+        stuck: tutorialPickup ? true : dangerous ? true : stuck,
+        xMin: tutorialPickup ? 160 : stageOnePlug ? 270 : plug ? 360 : dangerous ? 725 : 170,
+        xMax: tutorialPickup ? 210 : stageOnePlug ? 350 : plug ? 620 : dangerous ? 805 : 700,
+        danger: tutorialPickup ? false : dangerous,
+        preferCenter: tutorialPickup,
+        preferTop: stageOnePlug,
+        radiusMul: stageOnePlug ? 0.82 : undefined,
       });
       if (c) placed++;
     });
+    if (this.run.stage === 1) {
+      const bonusGold = this.tryPlace({ kind: 'GOLD', stuck: true, xMin: 748, xMax: 805, danger: true, optional: true, preferTop: true });
+      if (bonusGold) {
+        bonusGold.bonusTag = this.add
+          .text(0, 0, '3×', {
+            fontFamily: FONT,
+            fontSize: '16px',
+            fontStyle: 'bold',
+            color: '#ffe066',
+            stroke: '#2a0810',
+            strokeThickness: 4,
+            backgroundColor: '#5c3b00',
+            padding: { x: 5, y: 2 },
+          })
+          .setOrigin(0.5)
+          .setDepth(8);
+        this.time.delayedCall(1900, () => {
+          if (!bonusGold.removed) this.banner('BONUS GOLD BY THE DRUM · 3× WAX', '#ffe066', 24);
+        });
+      }
+    }
     this.st.target = placed;
     this.hairTarget = Math.round(sp.hairs * this.ear.hairMult);
     for (let i = 0; i < this.hairTarget; i++) {
@@ -410,6 +468,9 @@ export class GameScene extends Phaser.Scene {
     this.flinchInterval = sp.flinch;
     this.flinchT = sp.flinch || 999;
     this.sway = sp.sway * this.ear.wobble;
+    this.corePulseTimer = sp.corePulse ? 12 : 0;
+    this.corePulseWarning = false;
+    this.corePulseFx = 0;
     this.time.delayedCall(500, () => this.banner(`STAGE ${this.run.stage}`, '#ffe58a', 40));
   }
 
@@ -459,7 +520,7 @@ export class GameScene extends Phaser.Scene {
       this.st.time += dt;
       const p = this.input.activePointer;
       const mouseGrab = !p.wasTouch && p.leftButtonDown();
-      const grab = mouseGrab || !!this.keys.space?.isDown || this.touchGrab;
+      const grab = mouseGrab || !!this.keys.space?.isDown || this.touchGrab || this.canvasTouchGrab;
       const breath = (!p.wasTouch && p.rightButtonDown()) || !!this.keys.shift?.isDown || this.touchBreath;
 
       this.swab.update(dt, { px: this.ptr.x, py: this.ptr.y, grab, breath }, this.env);
@@ -470,9 +531,11 @@ export class GameScene extends Phaser.Scene {
       this.updateHairs();
       this.checkExits();
       this.updateMode(dt);
+      this.updateCorePulse(dt);
       this.updateFlinch(dt);
       this.applySway();
       this.checkDrum(dt);
+      this.checkWallScrape(dt);
       this.safety();
       this.updateAudio(dt);
     }
@@ -489,6 +552,34 @@ export class GameScene extends Phaser.Scene {
   private updateHairs() {
     const swayMult = this.run.mode === 'ENDLESS' ? 1 + this.st.depth * 0.06 : 1;
     for (const h of this.hairs) updateHair(h, this.animT, swayMult);
+  }
+
+  private updateCorePulse(dt: number) {
+    this.corePulseFx = Math.max(0, this.corePulseFx - dt * 1.25);
+    if (this.run.mode !== 'STAGE' || this.run.stage !== 12 || this.corePulseTimer <= 0) return;
+
+    this.corePulseTimer -= dt;
+    if (this.corePulseTimer > 0 && this.corePulseTimer <= 2 && !this.corePulseWarning) {
+      this.corePulseWarning = true;
+      this.synth.corePulseWarn();
+      this.banner('CORE PULSE · LOOSE WAX WILL SURGE LEFT', '#8be9fd', 25);
+    }
+    if (this.corePulseTimer > 0) return;
+
+    this.corePulseWarning = false;
+    this.corePulseTimer = 22;
+    this.corePulseFx = 1;
+    this.synth.thump(1.05);
+    for (const c of this.chunks) {
+      if (c.removed || c.stuck || c.held || c.kind === 'BOSS') continue;
+      const { x, y } = c.body.position;
+      if (x <= EXIT_X + 20 || x >= DRUM_X - 35) continue;
+      const velocity = c.body.velocity;
+      this.matter.body.setVelocity(c.body, {
+        x: clamp(Math.min(velocity.x - 3.2, -4.2), -8, -4.2),
+        y: velocity.y * 0.45 + (y < this.canal.center(x) ? -0.35 : 0.35),
+      });
+    }
   }
 
   private checkExits() {
@@ -523,24 +614,34 @@ export class GameScene extends Phaser.Scene {
 
   private spawnEndless() {
     const d = this.st.depth;
+    const goldVein = this.endlessGoldPending;
     const roll = Math.random();
-    const kind: ChunkKind = roll < 0.08 ? 'GOLD' : roll < 0.18 + d * 0.02 ? 'HARD' : 'NORMAL';
-    const stuck = kind !== 'NORMAL' || Math.random() < 0.7;
+    const kind: ChunkKind = goldVein ? 'GOLD' : roll < 0.08 ? 'GOLD' : roll < 0.18 + d * 0.02 ? 'HARD' : 'NORMAL';
+    const stuck = goldVein ? false : kind !== 'NORMAL' || Math.random() < 0.7;
     const c = this.tryPlace({
       kind,
       stuck,
-      xMin: 160,
-      xMax: d >= 3 ? 800 : 740,
+      xMin: goldVein ? 240 : 160,
+      xMax: goldVein ? 620 : d >= 3 ? 800 : 740,
       hpMul: (kind === 'HARD' ? 3 : kind === 'GOLD' ? 1.6 : 1) * (1 + 0.12 * d),
       grow: true,
     });
-    if (c) this.synth.squish();
+    if (c) {
+      this.synth.squish();
+      if (goldVein) this.endlessGoldPending = false;
+    }
   }
 
   private onDepthUp() {
-    this.banner(`Depth Lv.${this.st.depth} — wax is getting tougher!`, '#ff8a80', 30);
+    const goldVein = this.st.depth >= 3 && this.st.depth % 3 === 0;
+    if (goldVein) {
+      this.endlessGoldPending = true;
+      this.banner('GOLDEN VEIN INCOMING!', '#ffe066', 32);
+    } else {
+      this.banner(`Depth Lv.${this.st.depth} — wax is getting tougher!`, '#ff8a80', 30);
+    }
     this.synth.win();
-    this.cameras.main.flash(200, 255, 120, 120);
+    if (!lowFxMode) this.cameras.main.flash(200, 255, 120, 120);
     const want = Math.min(9, Math.round((2 + this.st.depth) * this.ear.hairMult));
     while (this.hairs.length < want) {
       const h = makeHair(this.canal, this.ear, this.hairs);
@@ -583,15 +684,22 @@ export class GameScene extends Phaser.Scene {
     this.st.charge = 0;
     b.img.setTexture(`boss${this.st.cracks}`);
     this.synth.crack();
-    this.cameras.main.shake(380, 0.02);
+    if (!lowFxMode) this.cameras.main.shake(380, 0.02);
     this.crumbs.emitParticleAt(b.body.position.x, b.body.position.y, lowFxMode ? 12 : 26);
     this.sparks.emitParticleAt(b.body.position.x, b.body.position.y, lowFxMode ? 4 : 8);
     this.shockDrum(4.5);
     if (this.st.cracks >= 3) {
       this.breakBoss();
     } else {
-      this.banner(`Crack ${this.st.cracks} / 3`, '#ffb74d', 36);
-      this.flinchInterval = 6;
+      const secondPhase = this.st.cracks === 2;
+      this.sway = secondPhase ? 0.34 : 0.16;
+      this.flinchInterval = secondPhase ? 5.5 : 8;
+      this.flinchT = secondPhase ? 3.2 : 5.5;
+      this.banner(
+        secondPhase ? 'Crack 2 / 3 · Violent pulse incoming!' : 'Crack 1 / 3 · Canal pulse incoming!',
+        secondPhase ? '#ff8a80' : '#ffb74d',
+        36,
+      );
     }
   }
 
@@ -621,8 +729,9 @@ export class GameScene extends Phaser.Scene {
     this.st.extracted = 0;
     this.phase = 'EXTRACT';
     this.swab.setTool('TWEEZER');
+    this.sway = 0.28;
     this.synth.pop(0.5);
-    this.sparks.emitParticleAt(bx, by, 16);
+    this.sparks.emitParticleAt(bx, by, lowFxMode ? 4 : 16);
     this.banner('The boulder is cracked!\nNow tweeze the pieces out carefully', '#ffe082', 28);
     this.flinchInterval = 8;
     this.flinchT = 7;
@@ -630,14 +739,48 @@ export class GameScene extends Phaser.Scene {
 
   // ═════════════════════════════ events ═════════════════════════════
   private onFree(c: Chunk) {
+    if (c.kind === 'PLUG') {
+      this.breakPlug(c);
+      return;
+    }
     setStuck(this, c, false);
     const cy = this.canal.center(c.body.position.x);
     const dir = cy > c.body.position.y ? 1 : -1;
     this.matter.body.setVelocity(c.body, { x: rnd(-1.2, 1.2), y: dir * 2.4 });
-    this.crumbs.emitParticleAt(c.body.position.x, c.body.position.y, 10);
+    this.crumbs.emitParticleAt(c.body.position.x, c.body.position.y, lowFxMode ? 4 : 10);
     this.synth.pop(0.85);
     this.synth.crunch(1.3);
     this.floatText(c.body.position.x, c.body.position.y - c.r - 6, 'Crack!', '#ffffff');
+  }
+
+  private breakPlug(c: Chunk) {
+    const { x, y } = c.body.position;
+    const guidedStageOne = this.run.mode === 'STAGE' && this.run.stage === 1;
+    this.st.target += 2;
+    this.removeChunk(c);
+    const sizes = [0.52, 0.46, 0.4];
+    const values = [0.42, 0.34, 0.24];
+    sizes.forEach((size, i) => {
+      const pieceX = x + (i - 1) * c.r * (guidedStageOne ? 1.35 : 0.48);
+      const piece = createChunk(this, {
+        x: pieceX,
+        y: guidedStageOne ? this.canal.center(pieceX) : y + (i - 1) * c.r * 0.12,
+        r: c.r * size,
+        kind: 'NORMAL',
+        stuck: false,
+        value: Math.max(1, Math.round(c.value * values[i])),
+        ignoreGravity: guidedStageOne,
+      });
+      this.chunks.push(piece);
+      this.matter.body.setVelocity(
+        piece.body,
+        guidedStageOne ? { x: 0, y: 0 } : { x: rnd(-1.8, -0.8), y: rnd(-1.6, 1.6) },
+      );
+    });
+    this.synth.crack();
+    this.crumbs.emitParticleAt(x, y, lowFxMode ? 6 : 18);
+    this.sparks.emitParticleAt(x, y, lowFxMode ? 2 : 6);
+    this.banner('BIG PLUG CRACKED! · PULL OUT THE PIECES', '#ffe082', 27);
   }
 
   private collect(c: Chunk, via: 'exit' | 'vacuum') {
@@ -650,14 +793,14 @@ export class GameScene extends Phaser.Scene {
     const pts = Math.round(c.value * 10 * mult);
     st.score += pts;
     st.wax += c.value;
-    st.extracted += 1;
+    if (!c.optional) st.extracted += 1;
 
     const x = clamp(c.body.position.x, 50, W - 60);
     const y = c.body.position.y;
     const gold = c.kind === 'GOLD' || c.kind === 'FRAG';
     this.floatText(x, y - 10, `+${pts}${st.combo > 1 ? `  x${mult.toFixed(2)}` : ''}`, gold ? '#ffe066' : '#fff3c4');
-    this.crumbs.emitParticleAt(x, y, 14);
-    if (gold) this.sparks.emitParticleAt(x, y, 10);
+    this.crumbs.emitParticleAt(x, y, lowFxMode ? 5 : 14);
+    if (gold) this.sparks.emitParticleAt(x, y, lowFxMode ? 3 : 10);
     this.synth.pop(1 + Math.min(0.6, st.combo * 0.06));
     this.synth.coin(1 + Math.min(0.8, st.combo * 0.07));
     if (via === 'vacuum') this.synth.squish();
@@ -685,6 +828,7 @@ export class GameScene extends Phaser.Scene {
     this.swab.drop(c);
     this.matter.world.remove(c.body);
     c.img.destroy();
+    c.bonusTag?.destroy();
     const i = this.chunks.indexOf(c);
     if (i >= 0) this.chunks.splice(i, 1);
   }
@@ -699,8 +843,10 @@ export class GameScene extends Phaser.Scene {
     this.st.comboTimer = 0;
     this.st.hitFlash += 1;
     this.hitFlashV = 1;
-    this.cameras.main.shake(240, 0.014);
-    this.cameras.main.flash(150, 255, 40, 40);
+    if (!lowFxMode) {
+      this.cameras.main.shake(240, 0.014);
+      this.cameras.main.flash(150, 255, 40, 40);
+    }
     this.synth.hit();
     this.floatText(this.swab.x - 30, this.swab.y - 30, 'Drum hit!', '#ff5252');
     if (this.st.hp <= 0) this.finish(false, 'DRUM');
@@ -740,6 +886,28 @@ export class GameScene extends Phaser.Scene {
     this.danger += (target - this.danger) * Math.min(1, dt * 6);
   }
 
+  private checkWallScrape(dt: number) {
+    if (this.over) return;
+    this.wallScrapeFxT = Math.max(0, this.wallScrapeFxT - dt);
+    const sw = this.swab;
+    const touchingWall =
+      sw.x > 0 &&
+      (sw.y - this.canal.top(sw.x) < sw.R + 3 || this.canal.bottom(sw.x) - sw.y < sw.R + 3);
+    if (!touchingWall || sw.speed < 0.5) return;
+
+    const scrapeStrength = clamp(sw.speed / 4, 0.2, 1);
+    this.st.hp -= dt * 5 * scrapeStrength * this.sensMult;
+    this.st.minHp = Math.min(this.st.minHp, this.st.hp);
+    this.st.combo = 0;
+    this.st.comboTimer = 0;
+
+    if (this.wallScrapeFxT <= 0) {
+      this.wallScrapeFxT = 0.8;
+      this.floatText(sw.x, sw.y - 24, 'Wall scrape!', '#ff8a80');
+    }
+    if (this.st.hp <= 0) this.finish(false, 'WALL');
+  }
+
   private updateFlinch(dt: number) {
     const sw = this.swab;
     if (sw.hairContact) this.sneezeMeter += dt * 22;
@@ -777,7 +945,7 @@ export class GameScene extends Phaser.Scene {
       const v = c.body.velocity;
       this.matter.body.setVelocity(c.body, { x: v.x + rnd(-2.5, 2.5), y: v.y - rnd(0, 3) });
     }
-    this.cameras.main.shake(300, 0.015);
+    if (!lowFxMode) this.cameras.main.shake(300, 0.015);
     this.synth.sneeze();
     this.banner('ACHOO!!', '#ffffff', 42);
   }
@@ -813,8 +981,18 @@ export class GameScene extends Phaser.Scene {
     this.synth.setScrape(level * (waxTouch ? 1 : 0.7), waxTouch ? 0.85 : 0.25);
     if (waxTouch && sp > 0.25 && Math.random() < dt * 10 * sp) this.synth.crunch(0.6);
     if (sw.mining && Math.random() < dt * 8) this.synth.crunch(0.9);
+    if (sw.miningTarget?.kind === 'PLUG' && Math.random() < dt * 8) {
+      const c = sw.miningTarget;
+      this.crumbs.emitParticleAt(
+        sw.miningAt.x + rnd(-c.r * 0.3, c.r * 0.3),
+        sw.miningAt.y + rnd(-c.r * 0.3, c.r * 0.3),
+        lowFxMode ? 1 : 2,
+      );
+    }
     this.synth.setSuction(sw.sucking ? 1 : 0);
     this.synth.setBuzz(sw.vibrating ? 1 : 0, 1 + this.st.charge * 0.6);
+    const whisper = this.run.mode === 'STAGE' ? stageParams(this.run.stage).whisper : 0;
+    this.synth.setWhisper(whisper * (0.72 + 0.28 * Math.sin(this.animT * 0.82)), this.animT);
 
     const lowHp = 1 - clamp(this.st.hp / 100, 0, 1);
     const bpm = 62 + this.danger * 70 + lowHp * 40;
@@ -846,7 +1024,7 @@ export class GameScene extends Phaser.Scene {
         const base = 25 + 15 * this.run.stage;
         bonuses.push({ label: `Stage ${this.run.stage} clear`, wax: base });
         if (st.minHp >= 99.5) {
-          bonuses.push({ label: 'Flawless · drum untouched', wax: Math.round(base * 0.5) });
+          bonuses.push({ label: 'Flawless · no ear damage', wax: Math.round(base * 0.5) });
           score += 500;
         }
         const par = stageParams(this.run.stage).parTime;
@@ -899,14 +1077,18 @@ export class GameScene extends Phaser.Scene {
 
     if (cleared) {
       this.synth.win();
-      this.cameras.main.flash(400, 255, 236, 160);
+      if (!lowFxMode) {
+        this.cameras.main.flash(400, 255, 236, 160);
+        this.sparks.emitParticleAt(W / 2, H / 2, 30);
+      }
       this.banner(this.run.mode === 'BOSS' ? 'BOSS DOWN!' : 'CLEAR!', '#ffe066', 52);
-      this.sparks.emitParticleAt(W / 2, H / 2, 30);
     } else {
       this.synth.lose();
-      this.cameras.main.shake(500, 0.02);
-      this.cameras.main.flash(300, 255, 30, 30);
-      this.banner(reason === 'CLOG' ? 'Canal clogged!' : 'Eardrum burst!', '#ff5252', 52);
+      if (!lowFxMode) {
+        this.cameras.main.shake(500, 0.02);
+        this.cameras.main.flash(300, 255, 30, 30);
+      }
+      this.banner(reason === 'CLOG' ? 'Canal clogged!' : reason === 'WALL' ? 'Canal scraped!' : 'Eardrum burst!', '#ff5252', 52);
     }
     this.time.delayedCall(1300, () => this.cb.onEnd(result));
   }
@@ -976,27 +1158,45 @@ export class GameScene extends Phaser.Scene {
         u.fillCircle(bp.x, bp.y, c.r + 6);
         continue;
       }
+      if (c.kind === 'PLUG' && c.stuck) {
+        // Scraping removes visible and physical volume, not only HP.
+        const progress = clamp(1 - c.hp / c.maxHp, 0, 1);
+        // Make the remaining mass visibly shrink before it fractures into pieces.
+        const targetScale = 1 - progress * 0.65;
+        if (c.sizeScale - targetScale >= 0.01) {
+          const ratio = targetScale / c.sizeScale;
+          this.matter.body.scale(c.body, ratio, ratio);
+          c.r = c.baseR * targetScale;
+          c.sizeScale = targetScale;
+          c.img.setScale(c.img.scaleX * ratio, c.img.scaleY * ratio);
+        }
+      }
       let jx = 0;
       let jy = 0;
       if (c.stuck) {
         u.fillStyle(shade(p.wall, 0.45), 0.55);
         u.fillCircle(bp.x, bp.y, c.r + 5);
-        const dmg = 1 - c.hp / c.maxHp;
-        if (dmg > 0.02) {
-          jx = rnd(-1, 1) * dmg * 1.6;
-          jy = rnd(-1, 1) * dmg * 1.6;
-          f.lineStyle(3, 0xffffff, 0.75);
+        const wear = clamp(1 - c.hp / c.maxHp, 0, 1);
+        if (wear > 0.02) {
+          jx = rnd(-1, 1) * wear * 1.6;
+          jy = rnd(-1, 1) * wear * 1.6;
+          const isPlug = c.kind === 'PLUG';
+          f.lineStyle(isPlug ? 3 + wear * 2 : 3, isPlug ? 0xffd166 : 0xffffff, isPlug ? 0.35 + wear * 0.6 : 0.75);
           f.beginPath();
-          f.arc(bp.x, bp.y, c.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - dmg), false);
+          f.arc(bp.x, bp.y, c.r + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (isPlug ? wear : 1 - wear), false);
           f.strokePath();
         }
       }
       if (c.danger && !c.held) {
-        u.lineStyle(2, 0xff5252, 0.35 + 0.25 * Math.sin(this.animT * 4 + c.id));
-        u.strokeCircle(bp.x, bp.y, c.r + 5);
+        const pulse = 0.55 + 0.35 * Math.sin(this.animT * 4 + c.id);
+        u.fillStyle(0xff5252, pulse * 0.12);
+        u.fillCircle(bp.x, bp.y, c.r + 10);
+        u.lineStyle(3, 0xff5252, pulse);
+        u.strokeCircle(bp.x, bp.y, c.r + 7);
       }
       c.img.setPosition(bp.x + jx, bp.y + jy);
       c.img.setRotation(c.body.angle);
+      c.bonusTag?.setPosition(bp.x + c.r + 17, bp.y - c.r - 4);
     }
 
     // boss charge ring
@@ -1009,8 +1209,23 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.boss) {
       const bp = this.boss.body.position;
-      f.lineStyle(2, 0xffffff, 0.2 + 0.1 * Math.sin(this.animT * 3));
+      const crackSeverity = this.st.cracks / 3;
+      f.lineStyle(2 + crackSeverity * 2, crackSeverity > 0.5 ? 0xff6b6b : 0xffffff, 0.2 + 0.25 * crackSeverity + 0.1 * Math.sin(this.animT * 3));
       f.strokeCircle(bp.x, bp.y, this.boss.r + 26 + sw.R);
+    }
+
+    if (this.run.mode === 'STAGE' && this.run.stage === 12) {
+      const coreX = DRUM_X - 54;
+      const coreY = this.canal.center(coreX);
+      if (this.corePulseWarning) {
+        const beat = 0.5 + 0.5 * Math.sin(this.animT * 9);
+        f.lineStyle(3, 0x8be9fd, 0.48 + beat * 0.42);
+        f.strokeCircle(coreX, coreY, 46 + beat * 9);
+      }
+      if (this.corePulseFx > 0) {
+        f.lineStyle(5, 0x8be9fd, this.corePulseFx * 0.8);
+        f.strokeCircle(coreX, coreY, 46 + (1 - this.corePulseFx) * 170);
+      }
     }
 
     // hairs
@@ -1107,15 +1322,19 @@ export class GameScene extends Phaser.Scene {
     const st = this.st;
     const hud: HudState = {
       drumHp: Math.max(0, st.hp),
+      flawless: st.minHp >= 99.5,
       score: st.score,
       wax: st.wax,
       extracted: st.extracted,
       target: st.target,
       combo: st.combo,
       comboMult: Math.min(3, 1 + 0.25 * Math.max(0, st.combo - 1)),
+      comboWindow: clamp(st.comboTimer / 6, 0, 1),
       breath: sw.breath / sw.cap,
       breathLocked: sw.breathLocked,
       energy: sw.energy,
+      grabbing: sw.grabbing,
+      grabbed: sw.holds.length > 0,
       tool: sw.tool,
       phase: this.phase,
       clog: Math.min(1, this.clogNow),

@@ -34,7 +34,7 @@ export class AsmrSynth {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
-  private loops: { scrape?: Loop; suction?: Loop; ambient?: Loop } = {};
+  private loops: { scrape?: Loop; suction?: Loop; ambient?: Loop; whisper?: Loop } = {};
   private buzz: { gain: GainNode; o1: OscillatorNode; o2: OscillatorNode } | null = null;
   muted = false;
   /** Portal ads: kept separate from `muted` so a player-muted game stays muted after an ad. */
@@ -218,6 +218,10 @@ export class AsmrSynth {
       { type: 'lowpass', freq: 2000, q: 0.7 },
     ]);
     this.loops.ambient = this.makeLoop([{ type: 'lowpass', freq: 240, q: 0.7 }]);
+    this.loops.whisper = this.makeLoop([
+      { type: 'bandpass', freq: 1250, q: 0.45 },
+      { type: 'highpass', freq: 520, q: 0.7 },
+    ]);
     if (this.loops.ambient && this.ctx) {
       this.loops.ambient.gain.gain.setTargetAtTime(0.16, this.ctx.currentTime, 0.6);
     }
@@ -243,7 +247,7 @@ export class AsmrSynth {
   }
 
   stopLoops() {
-    for (const k of ['scrape', 'suction', 'ambient'] as const) {
+    for (const k of ['scrape', 'suction', 'ambient', 'whisper'] as const) {
       const l = this.loops[k];
       if (l) {
         try {
@@ -283,6 +287,16 @@ export class AsmrSynth {
     const t = this.ctx.currentTime;
     l.gain.gain.setTargetAtTime(level * 0.42, t, 0.08);
     l.filters[0].frequency.setTargetAtTime(420 + level * 520, t, 0.1);
+  }
+
+  setWhisper(level: number, phase: number) {
+    const l = this.loops.whisper;
+    if (!l || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    const lv = Math.max(0, Math.min(1, level));
+    const drift = 0.5 + 0.5 * Math.sin(phase * 0.72);
+    l.gain.gain.setTargetAtTime(lv * 0.08, t, 0.35);
+    l.filters[0].frequency.setTargetAtTime(900 + drift * 850, t, 0.45);
   }
 
   setBuzz(level: number, pitch = 1) {
@@ -396,6 +410,11 @@ export class AsmrSynth {
 
   sneezeWarn() {
     this.tone({ freq: 300, to: 950, dur: 0.6, vol: 0.1, type: 'triangle' });
+  }
+
+  corePulseWarn() {
+    this.tone({ freq: 110, to: 165, dur: 0.6, vol: 0.11, type: 'sine' });
+    this.tone({ freq: 220, to: 330, dur: 0.48, vol: 0.055, type: 'sine', delay: 0.12 });
   }
 
   sneeze() {

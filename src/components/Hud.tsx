@@ -1,4 +1,4 @@
-import { TOOLS } from '../game/config';
+import { stageParams, TOOLS } from '../game/config';
 import type { HudState, RunConfig } from '../game/types';
 import { fmtTime } from '../hooks';
 import { cn } from '../utils/cn';
@@ -14,6 +14,7 @@ export function Hud({ hud, run, onPause }: Props) {
   if (!hud) return null;
   const hpColor = hud.drumHp > 60 ? 'bg-emerald-400' : hud.drumHp > 30 ? 'bg-amber-400' : 'bg-red-500';
   const tool = TOOLS[hud.tool];
+  const speedTimeLeft = run.mode === 'STAGE' ? stageParams(run.stage).parTime - hud.time : 0;
 
   return (
     <>
@@ -26,16 +27,24 @@ export function Hud({ hud, run, onPause }: Props) {
           </div>
         </div>
 
-        {hud.combo > 1 && (
-          <div className="shrink-0 rounded-full bg-orange-500/90 px-2 py-0.5 text-xs font-bold text-white sm:text-sm">
-            🔥 {hud.combo}x combo ×{hud.comboMult.toFixed(2)}
+        {hud.combo > 0 && hud.comboWindow > 0 && (
+          <div
+            className="relative shrink-0 overflow-hidden rounded-full bg-orange-500/90 px-2 py-0.5 text-xs font-bold text-white sm:text-sm"
+            title="Time left to continue combo"
+          >
+            <span className="relative z-[1]">🔥 {hud.combo}x combo ×{hud.comboMult.toFixed(2)}</span>
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 bg-amber-200/35 transition-[width] duration-100"
+              style={{ width: `${hud.comboWindow * 100}%` }}
+            />
           </div>
         )}
 
         {/* eardrum */}
         <div key={hud.hitFlash} className={cn('min-w-[90px] flex-1', hud.hitFlash > 0 && 'animate-hit')}>
           <div className="flex items-center justify-between text-[11px] leading-none text-white/80 sm:text-xs">
-            <span>👂 Eardrum</span>
+            <span>👂 Ear health</span>
             <span className={cn('font-bold', hud.drumHp <= 30 && 'text-red-400')}>{Math.ceil(hud.drumHp)}%</span>
           </div>
           <Bar value={hud.drumHp / 100} color={hpColor} height="h-3.5" className="mt-1" />
@@ -45,10 +54,22 @@ export function Hud({ hud, run, onPause }: Props) {
         <div className="hidden shrink-0 items-center gap-2 text-xs sm:flex sm:text-sm">
           {run.mode === 'STAGE' && (
             <>
-<span className="rounded-lg bg-white/10 px-2 py-1">
+              <span className="rounded-lg bg-white/10 px-2 py-1">
                 Chunks <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
               </span>
               <span className="rounded-lg bg-white/10 px-2 py-1">⏱ {fmtTime(hud.time)}</span>
+              <span className={cn('rounded-lg px-2 py-1', hud.flawless ? 'bg-emerald-500/20 text-emerald-200' : 'bg-red-500/20 text-red-200')}>
+                🎯 {hud.flawless ? 'Flawless' : 'Damage taken'}
+              </span>
+              <span className={cn('rounded-lg px-2 py-1', speedTimeLeft > 0 ? 'bg-amber-400/20 text-amber-100' : 'bg-white/10 text-white/50')}>
+                ⚡ {speedTimeLeft > 0 ? fmtTime(speedTimeLeft) : 'Speed lost'}
+              </span>
+              {run.stage >= 7 && (
+                <span className="flex items-center gap-1 rounded-lg bg-sky-400/15 px-2 py-1 text-sky-100" title="Gravity pull direction">
+                  <span aria-hidden="true" style={{ transform: `rotate(${(-hud.gravAngle * 180) / Math.PI}deg)`, display: 'inline-block' }}>⬇️</span>
+                  Drift
+                </span>
+              )}
             </>
           )}
           {run.mode === 'ENDLESS' && (
@@ -103,9 +124,21 @@ export function Hud({ hud, run, onPause }: Props) {
       {/* mobile-only compact mode info */}
       <div className="pointer-events-none absolute left-2 top-[58px] z-10 flex flex-wrap gap-1.5 text-xs sm:hidden">
         {run.mode === 'STAGE' && (
-          <span className="rounded-lg bg-black/60 px-2 py-1">
-            Chunks <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
-          </span>
+          <>
+            <span className="rounded-lg bg-black/60 px-2 py-1">
+              Chunks <b className="text-amber-300">{hud.extracted}</b>/{hud.target}
+            </span>
+            {run.stage >= 7 && (
+              <span
+                className="flex items-center gap-1 rounded-lg bg-sky-950/80 px-2 py-1 text-sky-100"
+                title="Gravity pull direction"
+                aria-label="Gravity pull direction"
+              >
+                <span aria-hidden="true" style={{ transform: `rotate(${(-hud.gravAngle * 180) / Math.PI}deg)`, display: 'inline-block' }}>⬇️</span>
+                Drift
+              </span>
+            )}
+          </>
         )}
         {run.mode === 'ENDLESS' && (
           <>
@@ -119,6 +152,23 @@ export function Hud({ hud, run, onPause }: Props) {
           </span>
         )}
       </div>
+
+      {run.mode === 'STAGE' && (
+        <div className="pointer-events-none absolute right-2 top-[58px] z-10 flex gap-1.5 text-[10px] sm:hidden">
+          <span
+            title={hud.flawless ? 'Flawless bonus intact' : 'Flawless bonus lost'}
+            className={cn('rounded-lg px-1.5 py-1', hud.flawless ? 'bg-emerald-950/80 text-emerald-100' : 'bg-red-950/80 text-red-100')}
+          >
+            🎯 {hud.flawless ? 'Clean' : 'Hit'}
+          </span>
+          <span
+            title={speedTimeLeft > 0 ? 'Time remaining for speed bonus' : 'Speed bonus lost'}
+            className={cn('rounded-lg px-1.5 py-1', speedTimeLeft > 0 ? 'bg-amber-950/80 text-amber-100' : 'bg-black/60 text-white/60')}
+          >
+            ⚡ {speedTimeLeft > 0 ? fmtTime(speedTimeLeft) : 'Missed'}
+          </span>
+        </div>
+      )}
 
       {/* bottom-left gauges */}
       <div className="pointer-events-none absolute bottom-2 left-2 z-10 w-44 space-y-1.5 rounded-xl bg-black/55 p-2 backdrop-blur sm:w-56">

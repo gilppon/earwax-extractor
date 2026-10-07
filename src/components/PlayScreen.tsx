@@ -8,6 +8,8 @@ import type { HudState, RunConfig, RunResult } from '../game/types';
 import { fmtTime, useIsTouch, usePortrait, type Tab } from '../hooks';
 import { cn } from '../utils/cn';
 import { Hud } from './Hud';
+import { StageGoalSummary } from './StageGoalSummary';
+import { createEarwaxShareUrl } from '../game/share';
 import { Btn, Card, EarAvatar, Wax } from './ui';
 import AdOverlay, { type AdState } from './AdOverlay';
 
@@ -28,7 +30,17 @@ interface Summary {
 const REASONS: Record<string, string> = {
   CLEAR: 'Clean run! You got every chunk out.',
   DRUM: 'Eardrum ruptured… the owner passed out.',
+  WALL: 'The tool scraped the ear canal until the owner passed out.',
   CLOG: 'The canal is now 100% earwax!',
+};
+
+const STAGE_TIPS: Partial<Record<number, string>> = {
+  7: 'Gravity shifts loose wax. Watch the HUD arrow, then grab when a piece drifts within reach.',
+  8: 'The canal is narrow here. Pull through the middle before turning toward the exit.',
+  9: 'Scrape the plugged passage until it cracks, then pull the loose pieces to the exit.',
+  10: 'A whisper layer shifts beneath the ambience. Track the wax visually and keep your tool clear of the fur.',
+  11: 'Strong gravity drift and frequent sneezes make long pulls risky. Save breath for precise moves.',
+  12: 'Two plugs block the core. Break them, then watch for the 2-second CORE PULSE warning before wax surges left.',
 };
 
 function HoldButton({
@@ -66,15 +78,27 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
   const handleRef = useRef<GameHandle | null>(null);
   const touchRef = useRef({ grab: false, breath: false });
   const summaryRef = useRef<Summary | null>(null);
+  const adTransitionBusyRef = useRef(false);
 
   const [started, setStarted] = useState(false);
   const [paused, setPaused] = useState(false);
   const [hud, setHud] = useState<HudState | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareStatus, setShareStatus] = useState('');
   const [summary, setSummary] = useState<Summary | null>(null);
   const [ad, setAd] = useState<AdState | null>(null);
   const [adBusy, setAdBusy] = useState(false);
   const [doubled, setDoubled] = useState(false);
+  const [compactBriefing, setCompactBriefing] = useState(
+    () => typeof window !== 'undefined' && window.innerHeight <= 480,
+  );
+
+  useEffect(() => {
+    const updateBriefingDensity = () => setCompactBriefing(window.innerHeight <= 480);
+    window.addEventListener('resize', updateBriefingDensity);
+    return () => window.removeEventListener('resize', updateBriefingDensity);
+  }, []);
 
   // register the mock-ad UI
   useEffect(() => {
@@ -107,6 +131,20 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
   };
 
   const isTouch = useIsTouch();
+
+  useEffect(() => {
+    let active = true;
+    setShareUrl('');
+    setShareStatus('');
+    if (result) {
+      void createEarwaxShareUrl(result).then((url) => {
+        if (active) setShareUrl(url);
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [result]);
   const portrait = usePortrait();
   const tool = TOOLS[run.mode === 'BOSS' ? 'VIBRATOR' : run.tool];
   const ear = EARS[run.ear];
@@ -144,22 +182,54 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
     Poki.gameplayStop();
   }, [started, result]);
 
-  const doResume = useCallback(() => {
-    setPaused(false);
-    handleRef.current?.resume();
-    Poki.gameplayStart();
-  }, []);
+  const continueFromPause = async (continueRun: () => void) => {
+    if (adBusy || adTransitionBusyRef.current) return;
+    adTransitionBusyRef.current = true;
+    setAdBusy(true);
+    try {
+      await Poki.commercialBreak();
+    } finally {
+      setAdBusy(false);
+      adTransitionBusyRef.current = false;
+    }
+    continueRun();
+  };
+
+  const doResume = useCallback(async () => {
+    if (!paused || result || adTransitionBusyRef.current) return;
+    adTransitionBusyRef.current = true;
+    setAdBusy(true);
+    try {
+      await Poki.commercialBreak();
+      setPaused(false);
+      handleRef.current?.resume();
+      Poki.gameplayStart();
+    } finally {
+      setAdBusy(false);
+      adTransitionBusyRef.current = false;
+    }
+  }, [paused, result]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (started && !result && ['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
       if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
         if (paused) doResume();
         else doPause();
       }
     };
+    const onWheel = (e: WheelEvent) => {
+      if (started && !result) e.preventDefault();
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [paused, doPause, doResume]);
+    window.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('wheel', onWheel);
+    };
+  }, [started, result, paused, doPause, doResume]);
 
   useEffect(() => {
     const onVis = () => {
@@ -178,21 +248,25 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
     handleRef.current?.setTouch(touchRef.current.grab, touchRef.current.breath);
   };
 
-  // forced 3-step tutorial on the first run (hold click → extract 1 → extract 3), +30 wax on completion
+  // Forced 3-step tutorial on the first run. Split the +30 wax reward across first extraction and completion.
   const [missionStep, setMissionStep] = useState(0); // 0 waiting, 1~3 in progress, 4 done
   const missionDoneRef = useRef(false);
 
   useEffect(() => {
-    if (!hud || result || missionDoneRef.current) return;
-    if (missionStep === 0 && hud.energy > 0.05) setMissionStep(1);
-    else if (missionStep === 1 && hud.extracted >= 1) setMissionStep(2);
+    if (!hud || result || missionDoneRef.current || save.tutorialDone) return;
+    if (missionStep === 0 && hud.grabbed) setMissionStep(1);
+    else if (missionStep === 1 && hud.extracted >= 1) {
+      setMissionStep(2);
+      actions.bonusWax(10);
+      synth.win();
+    }
     else if (missionStep === 2 && hud.extracted >= 3) {
       missionDoneRef.current = true;
       setMissionStep(4);
-      actions.bonusWax(30);
+      actions.bonusWax(20);
       synth.win();
     }
-  }, [hud, missionStep, result]);
+  }, [hud, missionStep, result, save.tutorialDone]);
 
   useEffect(() => {
     if (missionStep === 4) actions.markTutorialDone();
@@ -211,7 +285,6 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
       : run.mode === 'ENDLESS'
         ? 'Wax keeps bubbling up forever. Dig as deep as you can while the canal holds — and the eardrum survives!'
         : '① Crack the boss 3× with the sonic vibrator → ② Tweeze out 3 pieces without damage!';
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#1a0509]">
       {ad && (
@@ -223,38 +296,51 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
           }}
         />
       )}
-      <div ref={hostRef} className="absolute inset-x-0 bottom-0 top-[52px] cursor-crosshair" />
+      <div
+        ref={hostRef}
+        className={cn('absolute inset-x-0 bottom-0 cursor-crosshair', started && isTouch && !portrait ? 'top-0' : 'top-[52px]')}
+      />
 
       {started && !result && <Hud hud={hud} run={run} onPause={doPause} />}
 
       {/* first-run forced tutorial overlay */}
       {started && !result && !paused && !save.tutorialDone && (
-        <div className="pointer-events-none absolute inset-x-[4cqw] bottom-[16cqw] z-10 animate-pop rounded-2xl bg-slate-900/80 p-[3cqw] text-center leading-snug font-bold text-white" style={{ fontSize: '3.4cqw' }}>
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-x-[2cqw] z-10 animate-pop rounded-2xl bg-slate-950/70 p-2.5 text-center leading-snug font-bold text-white backdrop-blur-sm',
+            portrait ? 'top-[104px]' : 'top-[64px]',
+          )}
+          style={{ fontSize: 'clamp(11px, 1.8cqw, 18px)' }}
+        >
           {missionStep === 4 ? (
-            <div className="text-emerald-300">🎓 Tutorial done! +30 wax bonus</div>
+            <div className="text-emerald-300">🎓 Tutorial done! +30 wax earned</div>
           ) : (
             <>
-              <div className="mb-[1.5cqw] flex justify-center gap-[1.5cqw]">
-                {['Grab with tool', 'Extract 1 chunk', 'Extract 3 chunks'].map((s, i) => (
+              <div className="mb-1.5 flex flex-wrap justify-center gap-1.5">
+                {['Grab', 'Extract 1', 'Extract 3'].map((s, i) => (
                   <span
                     key={s}
                     className={cn(
-                      'rounded-full px-[2.4cqw] py-[0.6cqw]',
+                      'rounded-full px-2.5 py-1',
                       i < missionStep
                         ? 'bg-emerald-500/80'
                         : i === missionStep
                           ? 'bg-amber-400 text-amber-950'
                           : 'bg-white/15 text-white/60',
                     )}
-                    style={{ fontSize: '2.8cqw' }}
+                    style={{ fontSize: 'clamp(10px, 1.4cqw, 14px)' }}
                   >
                     {i < missionStep ? '✓' : `${i + 1}.`} {s}
                   </span>
                 ))}
               </div>
-              {missionStep === 0 && <div>👆 <span className="text-amber-300">Click and hold</span> anywhere!</div>}
-              {missionStep === 1 && <div>🧻 Drag the chunks to the <span className="text-amber-300">exit on the left (◀)</span>!</div>}
-              {missionStep === 2 && <div>👏 Pull <span className="text-amber-300">3 chunks</span> out in total! (watch the drum)</div>}
+                {missionStep === 0 && <div>👆 Point at wax and <span className="text-amber-300">hold</span>. Wait for the swab to reach it.</div>}
+                {missionStep === 1 && (
+                  <div>🧻 Hold stuck wax until loose. Then drag left across <span className="text-amber-300">EXIT</span>. Walls hurt.</div>
+                )}
+              {missionStep === 2 && (
+                <div>👏 First chunk out! <span className="text-emerald-300">+10 wax</span>. Pull {Math.max(0, 3 - (hud?.extracted ?? 1))} more for the final +20!</div>
+              )}
             </>
           )}
         </div>
@@ -301,26 +387,48 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
               </div>
             </div>
             <p className="mt-3 rounded-xl bg-black/30 p-3 text-sm text-white/90">🎯 {goal}</p>
-            <ul className="mt-3 space-y-1.5 text-sm text-white/80">
-              <li>
-                🖱️ <b>Move</b> — the tool tip follows your cursor. Your hand shakes!
-              </li>
-              <li>
-                👆 <b>Hold click</b> — {tool.how}
-              </li>
-              <li>
-                💨 <b>Shift / Right-click</b> — hold your breath to steady the shake (uses gauge)
-              </li>
-              <li>
-                👂 <b>Touch the eardrum and it hurts!</b> Wax in front of it is worth ×1.6
-              </li>
-              <li>
-                🤧 Brush a hair and you flinch — your hand jerks away.
-              </li>
-              <li>
-                ⏸ <b>Esc / P</b> — pause
-              </li>
-            </ul>
+            {run.mode === 'STAGE' && STAGE_TIPS[run.stage] && (
+              <p className="mt-2 rounded-xl bg-sky-300/10 p-3 text-sm text-sky-100">
+                {run.stage === 9 ? '🪨 ' : run.stage === 10 ? '🌫️ ' : run.stage === 12 ? '💠 ' : '🌀 '}
+                {STAGE_TIPS[run.stage]}
+              </p>
+            )}
+            {run.mode === 'STAGE' && run.stage === 1 && (
+              <p className="mt-2 rounded-xl bg-amber-300/10 p-3 text-sm text-amber-100">
+                🪨 Scrape the large plug until it cracks, then pull out its three pieces.
+              </p>
+            )}
+            <p className="mt-2 rounded-xl border border-rose-300/20 bg-rose-400/10 p-2 text-sm text-rose-100">
+              🧱 Moving while brushing a wall drains health. Keep the tool tip inside the canal.
+            </p>
+            <details open={!compactBriefing} className="mt-2 rounded-xl bg-black/20 p-3 text-sm text-white/80">
+              <summary className="cursor-pointer select-none font-bold text-white/90">📖 Controls &amp; hazards</summary>
+              <ul className="mt-2 space-y-1.5">
+                <li>
+                  🖱️ <b>Move</b> — the tool tip follows your cursor. Your hand shakes!
+                </li>
+                <li>
+                  👆 <b>Hold click</b> — {tool.how}
+                </li>
+                <li>
+                  💨 <b>Shift / Right-click</b> — hold your breath to steady the shake (uses gauge)
+                </li>
+                <li>
+                  👂 <b>Touch the eardrum and it hurts!</b> Wax in front of it is worth ×1.6
+                </li>
+                <li>
+                  🤧 Brush a hair and you flinch — your hand jerks away.
+                </li>
+                <li>
+                  ⏸ <b>Esc / P</b> — pause
+                </li>
+              </ul>
+              {run.mode === 'STAGE' && run.stage === 1 && (
+                <p className="mt-2 rounded-lg bg-amber-300/10 p-2 text-sm text-amber-100">
+                  ✨ Optional risk: golden wax near the eardrum pays 3×. Grab it for extra wax, but avoid the drum.
+                </p>
+              )}
+            </details>
             {run.mode === 'BOSS' && (
               <p className="mt-2 rounded-xl bg-orange-400/10 p-2 text-xs text-orange-200">
                 Park the vibrator on the boss (inside the white circle) and <b>hold click</b>. Moving slows the charge. Every crack shakes the eardrum.
@@ -350,13 +458,13 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
           <Card className="animate-pop w-full max-w-xs text-center">
             <div className="mb-3 text-2xl font-bold text-amber-200">⏸ Paused</div>
             <div className="flex flex-col gap-2">
-              <Btn variant="primary" onClick={doResume}>
-                Resume
+              <Btn variant="primary" disabled={adBusy} onClick={doResume}>
+                {adBusy ? 'Ad loading…' : 'Resume'}
               </Btn>
-              <Btn variant="ghost" onClick={onRetry}>
+              <Btn variant="ghost" disabled={adBusy} onClick={() => void continueFromPause(onRetry)}>
                 Restart
               </Btn>
-              <Btn variant="danger" onClick={() => onExit('mission')}>
+              <Btn variant="danger" disabled={adBusy} onClick={() => onExit('mission')}>
                 Quit run
               </Btn>
             </div>
@@ -403,7 +511,7 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
                 <div className="text-lg font-bold">{result.maxCombo}</div>
               </div>
               <div className="rounded-xl bg-black/30 p-2">
-                <div className="text-xs text-white/50">Eardrum left</div>
+                <div className="text-xs text-white/50">Ear health left</div>
                 <div className="text-lg font-bold">{result.drumHp}%</div>
               </div>
               <div className="rounded-xl bg-black/30 p-2">
@@ -411,6 +519,37 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
                 <div className="text-lg font-bold">{result.mode === 'ENDLESS' ? `Lv.${result.depth}` : EARS[result.ear].emoji}</div>
               </div>
             </div>
+
+            <StageGoalSummary result={result} />
+
+            <Btn
+              variant="ghost"
+              className="mt-3 w-full"
+              onClick={async () => {
+                const text = `Can you mine this ear? I extracted ${result.extracted} wax chunks, scored ${result.score.toLocaleString('en-US')}, and reached ×${result.maxCombo} combo on ${result.ear} Stage ${result.stage}.`;
+                const url = shareUrl || window.location.href;
+                try {
+                  if (navigator.share) {
+                    await navigator.share({ title: 'Earwax mining challenge', text, url });
+                    setShareStatus('Challenge shared! 🧽');
+                    return;
+                  }
+                  await navigator.clipboard.writeText(`${text} ${url}`);
+                  setShareStatus('Challenge link copied! Send it to a friend 🧽');
+                } catch (error) {
+                  if (error instanceof DOMException && error.name === 'AbortError') return;
+                  try {
+                    await navigator.clipboard.writeText(`${text} ${url}`);
+                    setShareStatus('Challenge link copied! Send it to a friend 🧽');
+                  } catch {
+                    setShareStatus('Copy the game link from your browser to challenge a friend.');
+                  }
+                }
+              }}
+            >
+              🧽 Challenge a friend to mine this stage
+            </Btn>
+            {shareStatus && <p aria-live="polite" className="mt-1 text-center text-xs font-bold text-emerald-300">{shareStatus}</p>}
 
             {result.bonuses.length > 0 && (
               <ul className="mt-3 space-y-1 rounded-xl bg-black/25 p-3 text-sm">
@@ -430,30 +569,40 @@ export function PlayScreen({ run, onExit, onRetry, onNextStage, onReviveRun }: P
 
             <div className="mt-4 grid grid-cols-2 gap-2">
               {result.cleared && result.mode === 'STAGE' && result.stage < STAGE_COUNT && (
-                <Btn variant="primary" className="col-span-2" onClick={onNextStage}>
-                  Next stage ▶
+                <Btn
+                  variant="primary"
+                  className="col-span-2"
+                  disabled={adBusy}
+                  onClick={() => void continueFromPause(onNextStage)}
+                >
+                  {adBusy ? 'Ad loading…' : 'Next stage ▶'}
                 </Btn>
               )}
+              <Btn
+                variant={result.cleared && result.mode === 'STAGE' ? 'ghost' : 'primary'}
+                className={result.cleared && result.mode === 'STAGE' && result.stage < STAGE_COUNT ? undefined : 'col-span-2'}
+                disabled={adBusy}
+                onClick={() => void continueFromPause(onRetry)}
+              >
+                {adBusy ? 'Ad loading…' : '🔁 Retry'}
+              </Btn>
               {!result.cleared && (
                 <Btn variant="pink" className="col-span-2" disabled={adBusy} onClick={watchRevive}>
                   🎬 {adBusy ? 'Ad loading…' : 'Watch an ad to retry with +30% eardrum'}
                 </Btn>
               )}
               {result.wax > 0 && !doubled && (
-                <Btn variant="primary" className="col-span-2" disabled={adBusy} onClick={watchDouble}>
+              <Btn variant="pink" className="col-span-2" disabled={adBusy} onClick={watchDouble}>
                   🎬 {adBusy ? 'Ad loading…' : `Watch an ad to double your wax (+${result.wax.toLocaleString('en-US')})`}
                 </Btn>
               )}
               {doubled && (
                 <p className="col-span-2 text-center text-sm font-bold text-emerald-300">✅ 2× ad reward claimed!</p>
               )}
-              <Btn variant={result.cleared && result.mode === 'STAGE' ? 'ghost' : 'primary'} onClick={onRetry}>
-                🔁 Retry
-              </Btn>
-              <Btn variant="pink" onClick={() => onExit('lab')}>
+              <Btn variant="pink" disabled={adBusy} onClick={() => onExit('lab')}>
                 🔬 Lab
               </Btn>
-              <Btn variant="ghost" className="col-span-2" onClick={() => onExit('mission')}>
+              <Btn variant="ghost" className="col-span-2" disabled={adBusy} onClick={() => onExit('mission')}>
                 🏠 Expedition
               </Btn>
             </div>

@@ -54,6 +54,7 @@ export class SwabController {
   hairContact = false;
   mining = false;
   miningAt = { x: 0, y: 0 };
+  miningTarget: Chunk | null = null;
   aim = { x: 40, y: H / 2 };
   private amp = 5;
   private prevGrab = false;
@@ -303,7 +304,7 @@ export class SwabController {
           continue;
         }
         const f = 1 - d / VR;
-        const heavy = c.kind === 'HARD' || c.kind === 'FRAG' ? 0.55 : 1;
+        const heavy = c.kind === 'HARD' || c.kind === 'PLUG' || c.kind === 'FRAG' ? 0.55 : 1;
         const s = (0.1 + 1.7 * f * f) * heavy;
         const bv = c.body.velocity;
         M.setVelocity(c.body, { x: bv.x * 0.9 + (dx / d) * s, y: bv.y * 0.9 + (dy / d) * s });
@@ -312,6 +313,7 @@ export class SwabController {
 
     // ── mining (detaching stuck wax) ──
     this.mining = false;
+    this.miningTarget = null;
     const pw = powerMult(this.run.power) * def.power;
     for (const c of [...env.chunks]) {
       if (c.removed || !c.stuck || c.kind === 'BOSS') continue;
@@ -327,6 +329,7 @@ export class SwabController {
       if (dmg > 0) {
         c.hp -= dmg;
         this.mining = true;
+        this.miningTarget = c;
         this.miningAt.x = c.body.position.x;
         this.miningAt.y = c.body.position.y;
         if (c.hp <= 0) env.onFree(c);
@@ -349,7 +352,8 @@ export class SwabController {
     const ny = ux;
 
     // sniper reticle (shows hand-sway radius around aim point)
-    g.lineStyle(1.5, 0xffffff, this.holding ? 0.7 : 0.28);
+    const reticleColor = this.holds.length ? 0xffd54f : this.grabbing ? 0xffe082 : 0xffffff;
+    g.lineStyle(1.5, reticleColor, this.holding ? 0.7 : this.grabbing ? 0.65 : 0.28);
     g.strokeCircle(this.aim.x, this.aim.y, 5 + this.amp * 0.9);
     g.lineStyle(1, 0xffffff, this.holding ? 0.6 : 0.2);
     g.lineBetween(this.aim.x - 3, this.aim.y, this.aim.x + 3, this.aim.y);
@@ -465,6 +469,18 @@ export class SwabController {
         }
         break;
       }
+    }
+
+    for (const h of this.holds) {
+      const c = h.chunk;
+      if (c.removed) continue;
+      const pulse = 0.5 + Math.sin(time * 8) * 0.5;
+      const cx = c.body.position.x;
+      const cy = c.body.position.y;
+      g.lineStyle(2, 0xffd54f, 0.35 + pulse * 0.3);
+      g.lineBetween(x, y, cx, cy);
+      g.lineStyle(2.5 + pulse * 1.5, 0xffd54f, 0.65 + pulse * 0.25);
+      g.strokeCircle(cx, cy, c.r + 7 + pulse * 2);
     }
   }
 }
