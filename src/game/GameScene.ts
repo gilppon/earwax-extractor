@@ -518,7 +518,7 @@ export class GameScene extends Phaser.Scene {
     this.flinchInterval = 8;
     this.flinchT = 7;
     this.sway = 0.08;
-    this.time.delayedCall(500, () => this.banner('Lime Wax Boulder', '#ffd180', 38));
+    this.time.delayedCall(500, () => this.banner('👑 Golden Amber King Boss 🍯', '#fef08a', 40));
   }
 
   // ═════════════════════════════ main loop ═════════════════════════════
@@ -706,9 +706,9 @@ export class GameScene extends Phaser.Scene {
       this.flinchInterval = secondPhase ? 5.5 : 8;
       this.flinchT = secondPhase ? 3.2 : 5.5;
       this.banner(
-        secondPhase ? 'Crack 2 / 3 · Violent pulse incoming!' : 'Crack 1 / 3 · Canal pulse incoming!',
-        secondPhase ? '#ff8a80' : '#ffb74d',
-        36,
+        secondPhase ? '💥 Crack 2 / 3 · Wild tremor incoming! 💥' : '⚡ Crack 1 / 3 · Royal rumble incoming! ⚡',
+        secondPhase ? '#ff8a80' : '#fde047',
+        38,
       );
     }
   }
@@ -1260,14 +1260,12 @@ export class GameScene extends Phaser.Scene {
         const c2 = t * t;
         pts.push({ x: a * h.rx + b * cx + c2 * h.tipX, y: a * h.ry + b * cy + c2 * h.tipY });
       }
-      hg.lineStyle(h.thick + 1, shade(p.hair, 0.6), 1);
+      hg.lineStyle(h.thick * 0.75, 0xd97706, 0.85);
       hg.strokePoints(pts, false, false);
-      hg.lineStyle(h.thick - 1, p.hair, 1);
-      hg.strokePoints(pts, false, false);
-      hg.lineStyle(1, shade(p.hair, 1.8), 0.6);
+      hg.lineStyle(1.8, 0xfde047, 0.65);
       hg.strokePoints(pts.slice(1), false, false);
-      hg.fillStyle(shade(p.hair, 0.6), 1);
-      hg.fillCircle(h.rx, h.ry, h.thick * 0.9);
+      hg.fillStyle(0xd97706, 0.9);
+      hg.fillCircle(h.rx, h.ry, h.thick * 0.65);
       if (!this.over && distToHair(h, sw.x, sw.y) < sw.R + 8) {
         hg.lineStyle(2, 0xffee58, 0.7);
         hg.strokeCircle(h.tipX, h.tipY, 6);

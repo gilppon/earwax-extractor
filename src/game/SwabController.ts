@@ -396,6 +396,7 @@ export class SwabController {
         const gap = this.grabbing ? 0.7 : 4.4;
         const mx = x - ux * 95;
         const my = y - uy * 95;
+        // 세련된 로즈골드 & 파스텔 네온 정밀 핀셋
         for (const s of [-1, 1]) {
           const bx = ax + nx * s * 9;
           const by = ay + ny * s * 9;
@@ -403,29 +404,31 @@ export class SwabController {
           const m2y = my + ny * s * (gap + 4.5);
           const tx = x + nx * s * gap;
           const ty = y + ny * s * gap;
-          g.lineStyle(6, 0x56626d, 1);
+          g.lineStyle(6, 0xe11d48, 1);
           g.lineBetween(bx, by, m2x, m2y);
           g.lineBetween(m2x, m2y, tx, ty);
-          g.lineStyle(3.2, 0xe3e9ee, 1);
+          g.lineStyle(3.4, 0xfb7185, 1);
           g.lineBetween(bx, by, m2x, m2y);
           g.lineBetween(m2x, m2y, tx, ty);
-          g.fillStyle(0x9aa7b3, 1);
-          g.fillCircle(tx, ty, 2.6);
+          g.lineStyle(1.2, 0xffedd5, 0.9);
+          g.lineBetween(bx + nx * s, by + ny * s, m2x + nx * s, m2y + ny * s);
+          g.fillStyle(0xffffff, 1);
+          g.fillCircle(tx, ty, 3.2);
         }
-        g.lineStyle(1, 0xffffff, this.grabbing ? 0.5 : 0.25);
-        g.strokeCircle(x, y, R + 9);
+        g.lineStyle(1.5, 0x38bdf8, this.grabbing ? 0.8 : 0.35);
+        g.strokeCircle(x, y, R + 8);
         break;
       }
       case 'SONIC_VACUUM': {
         const bx = x - ux * 28;
         const by = y - uy * 28;
-        g.lineStyle(22, 0x2b3a42, 1);
+        g.lineStyle(22, 0x0f766e, 1);
         g.lineBetween(ax, ay, bx, by);
-        g.lineStyle(16, 0x607d8b, 1);
+        g.lineStyle(16, 0x14b8a6, 1);
         g.lineBetween(ax, ay, bx, by);
-        g.lineStyle(4, 0xb0bec5, 0.8);
+        g.lineStyle(4, 0xccfbf1, 0.9);
         g.lineBetween(ax + nx * 4, ay + ny * 4, bx + nx * 4, by + ny * 4);
-        g.fillStyle(0x455a64, 1);
+        g.fillStyle(0x0d9488, 1);
         g.fillPoints(
           [
             { x: x - ux * 36 + nx * 10, y: y - uy * 36 + ny * 10 },
@@ -436,15 +439,15 @@ export class SwabController {
           true,
           true,
         );
-        g.lineStyle(2.5, this.sucking ? 0x4dd0e1 : 0x90a4ae, 1);
+        g.lineStyle(2.5, this.sucking ? 0x38bdf8 : 0x5eead4, 1);
         g.strokeCircle(x, y, R);
         if (this.sucking) {
           const VR = this.vacRadius();
-          g.lineStyle(1.5, 0x80deea, 0.16);
+          g.lineStyle(1.5, 0x38bdf8, 0.25);
           g.strokeCircle(x, y, VR);
           for (let k = 0; k < 3; k++) {
             const ph = (time * 1.6 + k / 3) % 1;
-            g.lineStyle(2, 0x80deea, ph * 0.45);
+            g.lineStyle(2.5, 0x22d3ee, ph * 0.6);
             g.strokeCircle(x, y, VR * (1 - ph) + R);
           }
         }
@@ -453,23 +456,31 @@ export class SwabController {
       case 'VIBRATOR': {
         const bx = x - ux * 8;
         const by = y - uy * 8;
-        g.lineStyle(17, 0x1f2a30, 1);
+        // 화사한 라벤더 바이올렛 하이테크 바디 + 네온 사이언 LED
+        g.lineStyle(18, 0x6d28d9, 1);
         g.lineBetween(ax, ay, bx, by);
-        g.lineStyle(12, 0x546e7a, 1);
+        g.lineStyle(12, 0xa855f7, 1);
         g.lineBetween(ax, ay, bx, by);
-        g.lineStyle(12, 0xff7043, 1);
+        g.lineStyle(3, 0xf3e8ff, 0.9);
+        g.lineBetween(ax + nx * 3, ay + ny * 3, bx + nx * 3, by + ny * 3);
+        // 네온 사이언 LED 인디케이터
+        g.lineStyle(13, 0x38bdf8, 1);
+        g.lineBetween(x - ux * 54, y - uy * 54, x - ux * 36, y - uy * 36);
+        g.lineStyle(5, 0xffffff, 0.95);
         g.lineBetween(x - ux * 52, y - uy * 52, x - ux * 38, y - uy * 38);
-        g.fillStyle(0xcfd8dc, 1);
-        g.fillCircle(x, y, R * 0.8);
-        g.fillStyle(0xffffff, 0.7);
-        g.fillCircle(x - R * 0.25, y - R * 0.25, R * 0.25);
-        g.lineStyle(2, 0x455a64, 1);
-        g.strokeCircle(x, y, R * 0.8);
+        // 퓨어 화이트 펄 팁
+        g.fillStyle(0xffffff, 1);
+        g.fillCircle(x, y, R * 0.85);
+        g.fillStyle(0x38bdf8, 0.6);
+        g.fillCircle(x - R * 0.2, y - R * 0.2, R * 0.35);
+        g.lineStyle(2.5, 0x8b5cf6, 1);
+        g.strokeCircle(x, y, R * 0.85);
         if (this.vibrating) {
           for (let k = 0; k < 3; k++) {
-            const ph = (time * 2.4 + k / 3) % 1;
-            g.lineStyle(3, 0xffab40, (1 - ph) * 0.8);
-            g.strokeCircle(x + (Math.random() - 0.5) * 2, y + (Math.random() - 0.5) * 2, R * 0.8 + ph * 46);
+            const ph = (time * 2.6 + k / 3) % 1;
+            const waveCol = k % 2 === 0 ? 0x38bdf8 : 0xc084fc;
+            g.lineStyle(3.5, waveCol, (1 - ph) * 0.9);
+            g.strokeCircle(x + (Math.random() - 0.5) * 2.5, y + (Math.random() - 0.5) * 2.5, R * 0.85 + ph * 52);
           }
         }
         break;

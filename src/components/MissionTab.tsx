@@ -60,10 +60,10 @@ export function MissionTab({ onStart, goTab }: Props) {
     },
     {
       id: 'BOSS',
-      icon: '🪨',
-      name: 'Lime Boulder Boss',
-      desc: 'A boulder by the eardrum! Buzz it 3× → tweeze it out.',
-      extra: save.bossDefeated ? 'Defeated ✔' : bossUnlocked ? 'Ready to fight' : '🔒 Needs Micro Tweezers',
+      icon: '👑',
+      name: 'Golden Amber King',
+      desc: 'Giant amber king by the eardrum! Buzz it 3× → tweeze out the treasures!',
+      extra: save.bossDefeated ? 'Defeated 👑' : bossUnlocked ? 'Ready to challenge' : '🔒 Needs Micro Tweezers',
     },
     {
       id: 'ENDLESS',
@@ -198,9 +198,9 @@ export function MissionTab({ onStart, goTab }: Props) {
             <Card className="text-sm text-white/80">
               <div className="mb-1 text-lg font-bold text-amber-200">🔧 Boss-only gear</div>
               <p>
-                <b>Phase 1</b> 📳 Sonic Vibrator — park it on the boss and <b>hold click</b>. Three cracks!
+                <b>Phase 1</b> 📳 Sonic Vibrator — hold still on the King to crack it! Three strikes!
                 <br />
-                <b>Phase 2</b> 🥢 Micro Tweezers — pull 3 broken pieces out without scratching the eardrum.
+                <b>Phase 2</b> 🥢 Micro Tweezers — carefully tweeze out the 3 royal golden nuggets!
               </p>
               {!bossUnlocked && (
                 <Btn variant="pink" className="mt-2" onClick={() => goTab('lab')}>

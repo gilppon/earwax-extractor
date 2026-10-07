@@ -177,20 +177,64 @@ export function buildTextures(scene: Phaser.Scene, pal: EarPalette) {
 
   gen(scene, 'wax_frag', S, (g) => {
     drawBlob(g, S, { base: 0xfbbf24, dark: 0xb45309, light: 0xfef9c3 }, 103, 10, 0.84, true);
+    sparkle(g, S * 0.7, S * 0.28, 12);
     crackLines(g, S, 1, 9, 2, true);
   });
 
   const BS = 192;
   for (let cr = 0; cr <= 3; cr++) {
     gen(scene, `boss${cr}`, BS, (g) => {
-      // 영롱한 대왕 황금 너겟 보석 (Golden Amber Boulder)
-      drawBlob(g, BS, { base: 0xf59e0b, dark: 0x92400e, light: 0xfef3c7 }, 131, 18, 0.86, true);
-      g.lineStyle(2.5, 0xfde047, 0.6);
+      // 찬란한 대왕 황금 앰버 킹 (Golden Amber King Boss)
+      drawBlob(g, BS, { base: 0xf59e0b, dark: 0xb45309, light: 0xfef08a }, 131, 18, 0.86, true);
+      
+      // 내부 영롱한 앰버 링 레이어
+      g.lineStyle(3, 0xfde047, 0.7);
       for (let k = 1; k <= 3; k++) {
         g.strokeCircle(BS / 2 - 4, BS / 2 - 2, BS * (0.13 * k));
       }
-      sparkle(g, BS * 0.72, BS * 0.24, 16);
-      sparkle(g, BS * 0.26, BS * 0.70, 12);
+      
+      // 왕관 (Royal Golden Crown) 상단 연출
+      const cx = BS / 2 - 2;
+      const cy = BS * 0.28;
+      // 왕관 베이스
+      g.fillStyle(0xfbbf24, 1);
+      g.lineStyle(2.5, 0xb45309, 1);
+      g.fillPoints([
+        { x: cx - 22, y: cy + 8 },
+        { x: cx - 22, y: cy - 14 },
+        { x: cx - 10, y: cy - 4 },
+        { x: cx, y: cy - 20 },
+        { x: cx + 10, y: cy - 4 },
+        { x: cx + 22, y: cy - 14 },
+        { x: cx + 22, y: cy + 8 },
+      ], true, true);
+      g.strokePoints([
+        { x: cx - 22, y: cy + 8 },
+        { x: cx - 22, y: cy - 14 },
+        { x: cx - 10, y: cy - 4 },
+        { x: cx, y: cy - 20 },
+        { x: cx + 10, y: cy - 4 },
+        { x: cx + 22, y: cy - 14 },
+        { x: cx + 22, y: cy + 8 },
+      ], true, true);
+      // 왕관 띠 & 보석 점 3개
+      g.fillStyle(0xd97706, 1);
+      g.fillRect(cx - 21, cy + 2, 42, 6);
+      g.fillStyle(0xef4444, 1); // 루비
+      g.fillCircle(cx - 12, cy + 5, 2.5);
+      g.fillStyle(0x10b981, 1); // 에메랄드
+      g.fillCircle(cx, cy + 5, 2.8);
+      g.fillStyle(0x3b82f6, 1); // 사파이어
+      g.fillCircle(cx + 12, cy + 5, 2.5);
+      // 왕관 꼭대기 다이아몬드 별
+      sparkle(g, cx, cy - 20, 10);
+      
+      // 보스 바디 찬란한 스파클
+      sparkle(g, BS * 0.74, BS * 0.38, 16);
+      sparkle(g, BS * 0.28, BS * 0.68, 14);
+      sparkle(g, BS * 0.62, BS * 0.76, 12);
+      
+      // 크랙 라인 (단계별 균열)
       crackLines(g, BS, cr, 211, 4, cr > 0);
     });
   }

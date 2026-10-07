@@ -74,7 +74,7 @@ export const MILESTONES: Milestone[] = [
   { kind: 'stages', at: 4, wax: 200, emoji: '🗺️', label: 'Reach STAGE 4' },
   { kind: 'stages', at: 8, wax: 600, emoji: '🏆', label: 'Clear STAGE 8' },
   { kind: 'stages', at: 12, wax: 1000, emoji: '🏆', label: 'Clear STAGE 12' },
-  { kind: 'boss', at: 1, wax: 500, emoji: '🪨', label: 'Defeat the Lime Boulder Boss' },
+  { kind: 'boss', at: 1, wax: 500, emoji: '👑', label: 'Defeat the Golden Amber King' },
 ];
 
 function achieved(m: Milestone): boolean {
