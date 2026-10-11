@@ -149,7 +149,12 @@ export interface ChunkOpts {
   ignoreGravity?: boolean;
 }
 
-export function chunkTexture(kind: ChunkKind) {
+export function chunkTexture(kind: ChunkKind, scene?: Phaser.Scene) {
+  if (scene) {
+    if (kind === 'GOLD' && scene.textures.exists('wax_gold_hd')) return 'wax_gold_hd';
+    if (kind === 'BOSS' && scene.textures.exists('boss_gem_hd')) return 'boss_gem_hd';
+    if (kind === 'NORMAL' && scene.textures.exists('wax_jelly_hd')) return 'wax_jelly_hd';
+  }
   switch (kind) {
     case 'GOLD':
       return 'wax_gold';
@@ -180,7 +185,7 @@ export function createChunk(scene: Phaser.Scene, o: ChunkOpts): Chunk {
     angle: Math.random() * Math.PI * 2,
   } as never) as MBody;
 
-  const img = scene.add.image(o.x, o.y, chunkTexture(o.kind));
+  const img = scene.add.image(o.x, o.y, chunkTexture(o.kind, scene));
   const d = (o.r * 2) / (o.kind === 'BOSS' ? 0.88 : 0.86);
   img.setDisplaySize(d, d);
   img.setDepth(5);

@@ -149,6 +149,13 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'Game' });
   }
 
+  // ═════════════════════════════ preload ═════════════════════════════
+  preload() {
+    this.load.image('wax_gold_hd', './sprites/wax_gold.webp');
+    this.load.image('boss_gem_hd', './sprites/boss_gem.webp');
+    this.load.image('wax_jelly_hd', './sprites/wax_jelly.webp');
+  }
+
   // ═════════════════════════════ setup ═════════════════════════════
   create() {
     // revive retry: +30% eardrum durability
@@ -820,6 +827,10 @@ export class GameScene extends Phaser.Scene {
     const cheer = compliments[Math.floor(Math.random() * compliments.length)];
     this.floatText(x, y - 36, cheer, '#38bdf8');
     this.triggerPatientPleasure();
+    if (!lowFxMode) {
+      this.cameras.main.flash(180, 210, 255, 245);
+      this.cameras.main.shake(110, 0.005);
+    }
     this.removeChunk(c);
 
     if (this.run.mode === 'STAGE') {

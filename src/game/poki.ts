@@ -1,4 +1,4 @@
-// Poki ad adapter; retain a mock only for off-portal development.
+// Portal ad adapter (Poki / CrazyGames dual-support with local dev mock).
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { synth } from './AsmrSynth';
@@ -6,6 +6,7 @@ import { synth } from './AsmrSynth';
 declare global {
   interface Window {
     PokiSDK?: any;
+    CrazyGames?: any;
   }
 }
 
@@ -13,9 +14,10 @@ export type AdKind = 'commercial' | 'rewarded';
 type AdUI = (kind: AdKind, done: (ok: boolean) => void) => void;
 
 const POKI_URL = 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js';
+const CRAZY_URL = 'https://sdk.crazygames.com/crazygames-sdk-v3.js';
 
 let adUI: AdUI | null = null;
-let provider: 'poki' | null = null;
+let provider: 'poki' | 'crazy' | null = null;
 let ready = false;
 let initPromise: Promise<void> | null = null;
 let loadingFinishedSent = false;
@@ -26,11 +28,12 @@ export function registerAdUI(fn: AdUI | null) {
   adUI = fn;
 }
 
-function env(): 'poki' | null {
+function env(): 'poki' | 'crazy' | null {
   try {
     const host = window.location.hostname;
     const q = window.location.search;
     if (/poki(-gdn)?\.com$/.test(host) || q.includes('poki')) return 'poki';
+    if (/(^|\.)crazygames\.com$/.test(host) || q.includes('crazy')) return 'crazy';
   } catch {
     /* ignore */
   }
@@ -56,19 +59,20 @@ function loadScript(src: string, timeout = 4000): Promise<void> {
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = window.setTimeout(() => resolve(fallback), ms);
-    p.then(
-      (value) => {
-        window.clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        window.clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
+  return Promise.race([p, new Promise<T>((resolve) => window.setTimeout(() => resolve(fallback), ms))]);
+}
+
+/** Inject a portal SDK; never throws and never hangs (blocked / offline falls through). */
+async function loadSdk(url: string): Promise<void> {
+  try {
+    await withTimeout(loadScript(url), 5000, undefined);
+  } catch {
+    /* ignore */
+  }
+}
+
+function crazy(): any | undefined {
+  return window.CrazyGames?.SDK;
 }
 
 export const Poki = {
@@ -76,29 +80,47 @@ export const Poki = {
     return provider !== null;
   },
 
+  get activeProvider() {
+    return provider;
+  },
+
   init(): Promise<void> {
     if (initPromise) return initPromise;
     initPromise = (async () => {
-      const e = env();
       try {
+        const e = env();
         if (e === 'poki') {
-          await withTimeout(loadScript(POKI_URL), 5000, undefined as never).catch(() => {});
+          await loadSdk(POKI_URL);
           await withTimeout(window.PokiSDK?.init() ?? Promise.resolve(), 5000, undefined);
           if (window.PokiSDK) provider = 'poki';
+        } else if (e === 'crazy') {
+          await loadSdk(CRAZY_URL);
+          await withTimeout(crazy()?.init() ?? Promise.resolve(), 5000, undefined);
+          if (crazy()) {
+            provider = 'crazy';
+            try {
+              crazy().game.loadingStart();
+            } catch {
+              /* ignore */
+            }
+          }
         }
       } catch {
         provider = null;
       }
       ready = true;
     })();
-    // Script loading and SDK init each have their own timeout. Await both so loadingFinished cannot race ahead of ready.
-    return initPromise;
+    return withTimeout(initPromise, 8000, undefined);
   },
 
   loadingFinished() {
     if (!ready || loadingFinishedSent) return;
     try {
-      if (provider === 'poki') window.PokiSDK?.gameLoadingFinished?.();
+      if (provider === 'poki') {
+        window.PokiSDK?.gameLoadingFinished?.();
+      } else if (provider === 'crazy') {
+        crazy()?.game?.loadingStop();
+      }
     } catch {
       /* ignore */
     }
@@ -111,6 +133,7 @@ export const Poki = {
     if (!ready || !loadingFinishedSent || gameplayActive || !provider) return;
     try {
       if (provider === 'poki') window.PokiSDK?.gameplayStart?.();
+      else if (provider === 'crazy') crazy()?.game?.gameplayStart();
       gameplayActive = true;
     } catch {
       /* ignore */
@@ -122,6 +145,7 @@ export const Poki = {
     if (!ready || !loadingFinishedSent || !gameplayActive || !provider) return;
     try {
       if (provider === 'poki') window.PokiSDK?.gameplayStop?.();
+      else if (provider === 'crazy') crazy()?.game?.gameplayStop();
     } catch {
       /* ignore */
     } finally {
@@ -133,6 +157,34 @@ export const Poki = {
     if (provider === 'poki' && ready) {
       try {
         await window.PokiSDK.commercialBreak(() => synth.setAdMuted(true));
+      } catch {
+        /* ignore */
+      } finally {
+        synth.setAdMuted(false);
+      }
+      return;
+    }
+    if (provider === 'crazy' && ready) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          let settled = false;
+          const finish = (error?: unknown) => {
+            if (settled) return;
+            settled = true;
+            if (error !== undefined) reject(error);
+            else resolve();
+          };
+          const requestAd = crazy()?.ad?.requestAd;
+          if (typeof requestAd !== 'function') {
+            finish(new Error('CrazyGames ad API unavailable'));
+            return;
+          }
+          requestAd.call(crazy()?.ad, 'midgame', {
+            adStarted: () => synth.setAdMuted(true),
+            adFinished: () => finish(),
+            adError: (error: unknown) => finish(error ?? new Error('CrazyGames ad error')),
+          });
+        });
       } catch {
         /* ignore */
       } finally {
@@ -154,6 +206,32 @@ export const Poki = {
     if (provider === 'poki' && ready) {
       try {
         return Boolean(await window.PokiSDK.rewardedBreak(() => synth.setAdMuted(true)));
+      } catch {
+        return false;
+      } finally {
+        synth.setAdMuted(false);
+      }
+    }
+    if (provider === 'crazy' && ready) {
+      try {
+        return await new Promise<boolean>((resolve, reject) => {
+          let settled = false;
+          const finish = (ok: boolean) => {
+            if (settled) return;
+            settled = true;
+            resolve(ok);
+          };
+          const requestAd = crazy()?.ad?.requestAd;
+          if (typeof requestAd !== 'function') {
+            reject(new Error('CrazyGames ad API unavailable'));
+            return;
+          }
+          requestAd.call(crazy()?.ad, 'rewarded', {
+            adStarted: () => synth.setAdMuted(true),
+            adFinished: () => finish(true),
+            adError: () => finish(false),
+          });
+        });
       } catch {
         return false;
       } finally {
